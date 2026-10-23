@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+.env*
+!.env.example
+*.tsbuildinfo
+next-env.d.ts
+exports/
+.vercel
+
+# Datos personales y archivos pesados: NUNCA al repositorio
+prototipos/*.xlsx
+prototipos/*.csv
+prototipos/*.zip
+*.xlsx
+*.csv

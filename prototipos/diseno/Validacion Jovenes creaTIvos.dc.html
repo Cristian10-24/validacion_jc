@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet"><style>body{margin:0;background:#F4F1EE;font-family:'Outfit',system-ui,sans-serif;color:#1C1A24;-webkit-font-smoothing:antialiased}a{color:#C9461B}a:hover{color:#9C3210}*{box-sizing:border-box}button{font-family:inherit;cursor:pointer}input{font-family:inherit}input:focus{outline:none}.dv-turn{padding:44px 48px 36px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 6px}.dv-tid{font:600 10px 'JetBrains Mono',monospace;padding:3px 7px;background:#1C1A24;color:#fff;border-radius:4px;text-decoration:none}.dv-tname{font:800 24px/1.2 'Outfit',sans-serif;color:#1C1A24;letter-spacing:-.02em}.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}.dv-oid{font:600 10.5px 'JetBrains Mono',monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1C1A24;border-radius:5px;text-decoration:none}.dv-olabel{display:flex;align-items:baseline;gap:8px;font:500 13px/1.3 'Outfit',sans-serif;color:#615C6E}.dv-opt:target .dv-oid{background:#F25C2A;color:#fff}.dv-next{margin:26px 0 0;font:13px/1.5 'Outfit',sans-serif;color:#615C6E}@keyframes spin{to{transform:rotate(360deg)}}@keyframes shimmer{0%{opacity:.55}50%{opacity:1}100%{opacity:.55}}</style></helmet>
+
+<section class="dv-turn" id="t0" style="padding-bottom:28px">
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-end;justify-content:space-between">
+    <div style="max-width:640px">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px"><img src="assets/logo-jc.png" alt="Jóvenes creaTIvos" style="height:64px;width:auto;display:block"><span style="font:600 13px 'Outfit';color:#615C6E">Fundación ROFÉ</span></div>
+      <h1 style="margin:0 0 12px;font:800 42px/1.05 'Outfit';letter-spacing:-.03em;text-wrap:balance">Validación de datos para certificados</h1>
+      <p style="margin:0;font:500 16px/1.55 'Outfit';color:#615C6E;text-wrap:pretty">700 estudiantes · 10 ciudades · 19 monitores. El primer marco de cada vista es interactivo; los demás muestran cada pantalla y estado (carga, vacío, error, éxito).</p>
+    </div>
+    <div style="display:grid;gap:8px;font:500 13px/1.45 'Outfit';color:#615C6E;max-width:430px">
+      <div style="font:600 10px 'JetBrains Mono';letter-spacing:.08em;text-transform:uppercase;color:#1C1A24">Decisiones</div>
+      <div>· Sin código de verificación: el estudiante confirma o corrige y sus datos quedan guardados.</div>
+      <div>· Los corregidos (amarillo) no entran a la lista final hasta que el monitor los aprueba.</div>
+      <div>· Las ciudades se ordenan de menor a mayor avance para ver primero dónde empujar.</div>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t1">
+  <div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Vista 1 · Estudiante</span></div>
+  <p style="margin:0 0 26px;font:500 14px/1.5 'Outfit';color:#615C6E">Meta: menos de 1 minuto. Una decisión por pantalla, botones de 58 px, texto corto.</p>
+  <div class="dv-opts">
+
+    <div class="dv-opt" id="1a">
+      <div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a><span style="color:#C9461B;font-weight:700">Prototipo interactivo</span> · flujo completo</div>
+      <div style="width:360px;height:760px;border-radius:46px;border:9px solid #1C1A24;background:#fff;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 60px -24px rgba(120,40,10,.4)">
+        <div style="height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font:700 14px 'Outfit'"><span>9:41</span><span style="display:flex;gap:4px;align-items:center"><i style="width:16px;height:10px;border-radius:2px;background:#1C1A24;display:block"></i><i style="width:22px;height:11px;border-radius:3px;border:1.5px solid #1C1A24;display:block"></i></span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:2px 20px 0;flex:none;height:50px">
+          <img src="assets/logo-jc.png" alt="Jóvenes creaTIvos" style="height:46px;width:auto;display:block">
+          <sc-if value="{{ canBack }}"><button onClick="{{ goBack }}" style="border:0;background:#F5F2EF;border-radius:12px;height:38px;padding:0 14px;font:600 14px 'Outfit';color:#1C1A24">← Atrás</button></sc-if>
+        </div>
+        <sc-if value="{{ showProgress }}">
+          <div style="display:flex;gap:6px;padding:14px 22px 0;flex:none">
+            <sc-for list="{{ progress }}" as="p"><div style="flex:1;height:5px;border-radius:3px;background:{{ p.bg }}"></div></sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isIngreso }}" hint-placeholder-val="{{ true }}">
+          <div style="flex:1;display:flex;flex-direction:column;padding:30px 22px 22px">
+            <div style="font:600 12px 'JetBrains Mono';color:#C9461B;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px">Certificados 2026</div>
+            <h2 style="margin:0 0 10px;font:800 31px/1.08 'Outfit';letter-spacing:-.03em;text-wrap:balance">Valida tus datos para tu certificado</h2>
+            <p style="margin:0 0 28px;font:500 16px/1.5 'Outfit';color:#615C6E">Te toma menos de un minuto.</p>
+            <label style="font:700 15px 'Outfit';margin-bottom:8px">Número de documento</label>
+            <input value="{{ doc }}" onChange="{{ onDoc }}" onKeyDown="{{ docKey }}" inputMode="numeric" placeholder="Sin puntos ni espacios" style="height:60px;border:2px solid {{ docBorder }};border-radius:18px;padding:0 18px;font:700 21px 'Outfit';letter-spacing:.04em;color:#1C1A24;width:100%;background:#fff">
+            <sc-if value="{{ docErr }}"><div style="margin-top:8px;font:600 14px 'Outfit';color:#C2303D">{{ docErr }}</div></sc-if>
+            <div style="flex:1"></div>
+            <button onClick="{{ buscar }}" style="height:58px;border-radius:20px;background:#F25C2A;color:#fff;font:700 18px 'Outfit';border:0;width:100%">Buscar mis datos</button>
+            <div style="text-align:center;margin-top:14px;font:500 13px 'Outfit';color:#615C6E">¿Problemas? Escríbele a tu monitor</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isCargando }}">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:22px">
+            <div style="width:48px;height:48px;border-radius:50%;border:5px solid #FFE6DC;border-top-color:#F25C2A;animation:spin .8s linear infinite"></div>
+            <div style="font:700 17px 'Outfit'">{{ loadingText }}</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isRevision }}">
+          <div style="flex:1;display:flex;flex-direction:column;padding:22px 22px 22px">
+            <h2 style="margin:0 0 16px;font:800 26px/1.15 'Outfit';letter-spacing:-.025em">Hola, {{ firstName }}</h2>
+            <div style="border-radius:24px;background:#FFF1EA;padding:22px 20px 20px;position:relative;overflow:hidden">
+              <div style="position:absolute;right:-34px;top:-34px;width:110px;height:110px;border-radius:50%;border:18px solid #F25C2A;opacity:.9"></div>
+              <div style="position:relative;font:600 14px 'Outfit';color:#7A3A20;margin-bottom:14px">Así aparecerá en tu certificado:</div>
+              <div style="position:relative;font:800 29px/1.1 'Outfit';letter-spacing:-.02em;text-wrap:balance;padding-right:30px">{{ name }}</div>
+              <div style="position:relative;margin-top:14px;padding-top:14px;border-top:1.5px dashed #F5B79E;font:600 16px 'Outfit';word-break:break-all">{{ email }}</div>
+            </div>
+            <div style="margin-top:14px;display:flex;gap:10px;padding:14px;border-radius:16px;background:#FFF7DC;font:500 14px/1.45 'Outfit';color:#5A4300"><span style="font-weight:800">!</span><span>Revisa tildes, mayúsculas y que sea un correo personal que seguirás usando (no del colegio ni universidad).</span></div>
+            <div style="flex:1"></div>
+            <div style="display:grid;gap:10px">
+              <button onClick="{{ confirmarOk }}" style="height:58px;border-radius:20px;background:#1F9D6B;color:#fff;font:700 18px 'Outfit';border:0;display:flex;align-items:center;justify-content:center;gap:10px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M7.5 12.5l3 3 6-6.5"></path></svg>Mis datos están bien</button>
+              <button onClick="{{ irCorregir }}" style="height:58px;border-radius:20px;background:#fff;color:#1C1A24;font:700 18px 'Outfit';border:2px solid #E7E2DD;display:flex;align-items:center;justify-content:center;gap:10px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"></path><path d="M13.5 6.5l4 4"></path></svg>Corregir</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isCorreccion }}">
+          <div style="flex:1;display:flex;flex-direction:column;padding:20px 22px 22px;overflow:auto">
+            <h2 style="margin:0 0 4px;font:800 26px/1.15 'Outfit';letter-spacing:-.025em">Corrige tus datos</h2>
+            <p style="margin:0 0 16px;font:500 15px 'Outfit';color:#615C6E">Escríbelos tal como quieres que salgan.</p>
+            <label style="font:700 14px 'Outfit';margin-bottom:6px">Nombre completo</label>
+            <input value="{{ eName }}" onChange="{{ onEName }}" style="height:54px;border:2px solid {{ nameBorder }};border-radius:16px;padding:0 14px;font:600 17px 'Outfit';color:#1C1A24;width:100%;flex:none">
+            <sc-if value="{{ nameErr }}"><div style="margin-top:6px;font:600 13.5px/1.4 'Outfit';color:#C2303D">{{ nameErr }}</div></sc-if>
+            <sc-if value="{{ nameWarn }}"><div style="margin-top:6px;font:600 13.5px/1.4 'Outfit';color:#8A5A00">{{ nameWarn }}</div></sc-if>
+            <label style="font:700 14px 'Outfit';margin:16px 0 6px">Correo personal</label>
+            <input value="{{ eEmail }}" onChange="{{ onEEmail }}" inputMode="email" autoCapitalize="none" style="height:54px;border:2px solid {{ emailBorder }};border-radius:16px;padding:0 14px;font:600 17px 'Outfit';color:#1C1A24;width:100%;flex:none">
+            <sc-if value="{{ emailErr }}"><div style="margin-top:6px;font:600 13.5px/1.4 'Outfit';color:#C2303D">{{ emailErr }}</div></sc-if>
+            <sc-if value="{{ emailSuggest }}">
+              <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:14px;background:#FFF7DC">
+                <span style="font:600 14px/1.35 'Outfit';color:#5A4300">¿Quisiste decir <b>{{ suggestDomain }}</b>?</span>
+                <button onClick="{{ applySuggest }}" style="flex:none;height:38px;padding:0 16px;border-radius:12px;border:0;background:#1C1A24;color:#fff;font:700 14px 'Outfit'">Usar</button>
+              </div>
+            </sc-if>
+            <button onClick="{{ toggleConfirm }}" style="margin-top:18px;display:flex;gap:12px;align-items:flex-start;text-align:left;border:2px solid {{ confirmBorder }};background:{{ confirmBg }};border-radius:16px;padding:13px 14px;flex:none">
+              <span style="flex:none;width:26px;height:26px;border-radius:8px;border:2px solid {{ checkBorder }};background:{{ checkBg }};color:#fff;display:flex;align-items:center;justify-content:center;font:800 15px 'Outfit'">{{ checkMark }}</span>
+              <span style="font:600 14.5px/1.4 'Outfit';color:#1C1A24">Confirmo que este es mi correo personal y lo seguiré usando</span>
+            </button>
+            <sc-if value="{{ confirmErr }}"><div style="margin-top:6px;font:600 13.5px 'Outfit';color:#C2303D">Marca la casilla para continuar</div></sc-if>
+            <div style="flex:1;min-height:16px"></div>
+            <button onClick="{{ guardar }}" style="height:58px;border-radius:20px;background:#F25C2A;color:#fff;font:700 18px 'Outfit';border:0;flex:none">Guardar mis datos</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isExito }}">
+          <div style="flex:1;display:flex;flex-direction:column;padding:16px 22px 22px">
+            <div style="position:relative;height:240px">
+              <div style="position:absolute;left:50%;top:50%;width:200px;height:200px;margin:-100px 0 0 -100px;border-radius:50%;border:26px solid #FFE1D3"></div>
+              <div style="position:absolute;left:50%;top:50%;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;background:#1F9D6B;display:flex;align-items:center;justify-content:center;color:#fff;font:800 60px/1 'Outfit'">✓</div>
+              <div style="position:absolute;left:22px;top:30px;width:24px;height:24px;border-radius:50%;background:#FFC93C"></div>
+              <div style="position:absolute;right:30px;top:18px;width:18px;height:18px;background:#3E8FD0;transform:rotate(20deg);border-radius:5px"></div>
+              <div style="position:absolute;right:14px;bottom:62px;width:28px;height:28px;border-radius:50%;border:5px solid #F25C2A"></div>
+              <div style="position:absolute;left:30px;bottom:34px;width:16px;height:16px;background:#E2407A;transform:rotate(45deg);border-radius:3px"></div>
+              <div style="position:absolute;left:4px;top:122px;width:10px;height:10px;border-radius:50%;background:#7BC043"></div>
+              <div style="position:absolute;right:82px;bottom:6px;width:12px;height:12px;border-radius:50%;background:#FFC93C"></div>
+            </div>
+            <h2 style="margin:0 0 8px;text-align:center;font:800 29px/1.08 'Outfit';letter-spacing:-.03em;text-wrap:balance">¡Listo! Tus datos quedaron validados</h2>
+            <p style="margin:0 0 18px;text-align:center;font:500 15.5px/1.5 'Outfit';color:#615C6E">Tu certificado llegará a este correo.</p>
+            <div style="border-radius:18px;background:#F7F4F1;padding:14px 16px;display:grid;gap:4px">
+              <div style="font:800 17px 'Outfit'">{{ name }}</div>
+              <div style="font:500 14.5px 'Outfit';color:#615C6E;word-break:break-all">{{ email }}</div>
+            </div>
+            <div style="flex:1"></div>
+            <button onClick="{{ reiniciar }}" style="height:48px;border-radius:18px;background:transparent;color:#615C6E;font:600 15px 'Outfit';border:0">Ya puedes cerrar esta página</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isNoEncontrado }}">
+          <div style="flex:1;display:flex;flex-direction:column;padding:36px 22px 22px">
+            <div style="width:66px;height:66px;border-radius:22px;background:#FCE6E8;color:#C2303D;display:flex;align-items:center;justify-content:center;font:800 32px 'Outfit';margin-bottom:22px">?</div>
+            <h2 style="margin:0 0 10px;font:800 28px/1.1 'Outfit';letter-spacing:-.03em">Tu documento no aparece</h2>
+            <p style="margin:0 0 18px;font:500 16px/1.5 'Outfit';color:#615C6E">Escríbele a tu monitor. Revisa también que el número esté bien escrito.</p>
+            <div style="border-radius:16px;background:#F7F4F1;padding:14px 16px;font:700 19px 'Outfit';letter-spacing:.04em">{{ doc }}</div>
+            <div style="flex:1"></div>
+            <button onClick="{{ reiniciar }}" style="height:58px;border-radius:20px;background:#F25C2A;color:#fff;font:700 18px 'Outfit';border:0">Intentar con otro número</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isYaValidado }}">
+          <div style="flex:1;display:flex;flex-direction:column;padding:36px 22px 22px">
+            <div style="width:66px;height:66px;border-radius:22px;background:#E3F5EC;color:#1F9D6B;display:flex;align-items:center;justify-content:center;font:800 32px 'Outfit';margin-bottom:22px">✓</div>
+            <h2 style="margin:0 0 10px;font:800 28px/1.1 'Outfit';letter-spacing:-.03em">Ya validaste tus datos</h2>
+            <p style="margin:0 0 18px;font:500 16px/1.5 'Outfit';color:#615C6E">No tienes que hacer nada más. Si necesitas un cambio, escríbele a tu monitor.</p>
+            <div style="border-radius:18px;background:#F7F4F1;padding:14px 16px;display:grid;gap:4px">
+              <div style="font:800 17px 'Outfit'">Isabella Hernández Mejía</div>
+              <div style="font:500 14.5px 'Outfit';color:#615C6E">isabella.hernandez@gmail.com</div>
+              <div style="font:600 13px 'Outfit';color:#17734F;margin-top:4px">Validado el 14 oct · 7:32 p. m.</div>
+            </div>
+            <div style="flex:1"></div>
+            <button onClick="{{ reiniciar }}" style="height:58px;border-radius:20px;background:#F5F2EF;color:#1C1A24;font:700 18px 'Outfit';border:0">Volver al inicio</button>
+          </div>
+        </sc-if>
+      </div>
+      <div style="width:360px;display:grid;gap:8px">
+        <div style="font:600 10px 'JetBrains Mono';letter-spacing:.08em;text-transform:uppercase;color:#615C6E">Documentos de prueba</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <button onClick="{{ demoFound }}" style="height:32px;padding:0 10px;border-radius:8px;border:1px solid #DDD6CF;background:#fff;font:600 11.5px 'JetBrains Mono'">1023456789 · encontrado</button>
+          <button onClick="{{ demoDone }}" style="height:32px;padding:0 10px;border-radius:8px;border:1px solid #DDD6CF;background:#fff;font:600 11.5px 'JetBrains Mono'">1099999999 · ya validó</button>
+          <button onClick="{{ demoNone }}" style="height:32px;padding:0 10px;border-radius:8px;border:1px solid #DDD6CF;background:#fff;font:600 11.5px 'JetBrains Mono'">otro · no aparece</button>
+        </div>
+        <div style="font:500 13px/1.45 'Outfit';color:#615C6E">En “Corregir” prueba <b>vgomez@unal.edu.co</b> o <b>valentina@gmial.com</b>.</div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1b">
+      <div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>1 · Ingreso · error</div>
+      <div style="width:360px;height:760px;border-radius:46px;border:9px solid #1C1A24;background:#fff;overflow:hidden;display:flex;flex-direction:column">
+        <div style="height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font:700 14px 'Outfit'"><span>9:41</span><span style="display:flex;gap:4px;align-items:center"><i style="width:16px;height:10px;border-radius:2px;background:#1C1A24;display:block"></i><i style="width:22px;height:11px;border-radius:3px;border:1.5px solid #1C1A24;display:block"></i></span></div>
+        <div style="padding:2px 20px 0;height:50px;display:flex;align-items:center"><img src="assets/logo-jc.png" alt="Jóvenes creaTIvos" style="height:46px;width:auto;display:block"></div>
+        <div style="flex:1;display:flex;flex-direction:column;padding:30px 22px 22px">
+          <div style="font:600 12px 'JetBrains Mono';color:#C9461B;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px">Certificados 2026</div>
+          <h2 style="margin:0 0 10px;font:800 31px/1.08 'Outfit';letter-spacing:-.03em">Valida tus datos para tu certificado</h2>
+          <p style="margin:0 0 28px;font:500 16px/1.5 'Outfit';color:#615C6E">Te toma menos de un minuto.</p>
+          <div style="font:700 15px 'Outfit';margin-bottom:8px">Número de documento</div>
+          <div style="height:60px;border:2px solid #D64553;border-radius:18px;padding:0 18px;display:flex;align-items:center;font:700 21px 'Outfit';letter-spacing:.04em">10234</div>
+          <div style="margin-top:8px;font:600 14px 'Outfit';color:#C2303D">Revisa el número: parece incompleto</div>
+          <div style="flex:1"></div>
+          <div style="height:58px;border-radius:20px;background:#F25C2A;color:#fff;font:700 18px 'Outfit';display:flex;align-items:center;justify-content:center">Buscar mis datos</div>
+          <div style="text-align:center;margin-top:14px;font:500 13px 'Outfit';color:#615C6E">¿Problemas? Escríbele a tu monitor</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1c">
+      <div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Ingreso · cargando</div>
+      <div style="width:360px;height:760px;border-radius:46px;border:9px solid #1C1A24;background:#fff;overflow:hidden;display:flex;flex-direction:column">
+        <div style="height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font:700 14px 'Outfit'"><span>9:41</span><span style="display:flex;gap:4px;align-items:center"><i style="width:16px;height:10px;border-radius:2px;background:#1C1A24;display:block"></i><i style="width:22px;height:11px;border-radius:3px;border:1.5px solid #1C1A24;display:block"></i></span></div>
+        <div style="padding:2px 20px 0;height:50px;display:flex;align-items:center"><img src="assets/logo-jc.png" alt="Jóvenes creaTIvos" style="height:46px;width:auto;display:block"></div>
+        <div style="flex:1;display:flex;flex-direction:column;padding:30px 22px 22px">
+          <div style="font:600 12px 'JetBrains Mono';color:#C9461B;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px">Certificados 2026</div>
+          <h2 style="margin:0 0 10px;font:800 31px/1.08 'Outfit';letter-spacing:-.03em">Valida tus datos para tu certificado</h2>
+          <p style="margin:0 0 28px;font:500 16px/1.5 'Outfit';color:#615C6E">Te toma menos de un minuto.</p>
+          <div style="font:700 15px 'Outfit';margin-bottom:8px">Número de documento</div>
+          <div style="height:60px;border:2px solid #E7E2DD;border-radius:18px;padding:0 18px;display:flex;align-items:center;font:700 21px 'Outfit';letter-spacing:.04em;color:#9A94A6">1023456789</div>
+          <div style="flex:1"></div>
+          <div style="height:58px;border-radius:20px;background:#F79A78;color:#fff;font:700 18px 'Outfit';display:flex;align-items:center;justify-content:center;gap:12px"><span style="width:20px;height:20px;border-radius:50%;border:3px solid rgba(255,255,255,.4);border-top-color:#fff;animation:spin .8s linear infinite"></span>Buscando…</div>
+          <div style="text-align:center;margin-top:14px;font:500 13px 'Outfit';color:#615C6E">¿Problemas? Escríbele a tu monitor</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1d">
+      <div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>2 · Revisión</div>
+      <div style="width:360px;height:760px;border-radius:46px;border:9px solid #1C1A24;background:#fff;overflow:hidden;display:flex;flex-direction:column">
+        <div style="height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font:700 14px 'Outfit'"><span>9:41</span><span style="display:flex;gap:4px;align-items:center"><i style="width:16px;height:10px;border-radius:2px;background:#1C1A24;display:block"></i><i style="width:22px;height:11px;border-radius:3px;border:1.5px solid #1C1A24;display:block"></i></span></div>
+        <div style="padding:2px 20px 0;height:50px;display:flex;align-items:center"><img src="assets/logo-jc.png" alt="Jóvenes creaTIvos" style="height:46px;width:auto;display:block"></div>
+        <div style="display:flex;gap:6px;padding:14px 22px 0"><div style="flex:1;height:5px;border-radius:3px;background:#F25C2A"></div><div style="flex:1;height:5px;border-radius:3px;background:#EEE9E4"></div></div>
+        <div style="flex:1;display:flex;flex-direction:column;padding:22px">
+          <h2 style="margin:0 0 16px;font:800 26px/1.15 'Outfit';letter-spacing:-.025em">Hola, Valentina</h2>
+          <div style="border-radius:24px;background:#FFF1EA;padding:22px 20px 20px;position:relative;overflow:hidden">
+            <div style="position:absolute;right:-34px;top:-34px;width:110px;height:110px;border-radius:50%;border:18px solid #F25C2A;opacity:.9"></div>
+            <div style="position:relative;font:600 14px 'Outfit';color:#7A3A20;margin-bottom:14px">Así aparecerá en tu certificado:</div>
+            <div style="position:relative;font:800 29px/1.1 'Outfit';letter-spacing:-.02em;padding-right:30px">Valentina Gómez Ríos</div>
+            <div style="position:relative;margin-top:14px;padding-top:14px;border-top:1.5px dashed #F5B79E;font:600 16px 'Outfit'">vgomez@unal.edu.co</div>
+          </div>
+          <div style="margin-top:14px;display:flex;gap:10px;padding:14px;border-radius:16px;background:#FFF7DC;font:500 14px/1.45 'Outfit';color:#5A4300"><span style="font-weight:800">!</span><span>Revisa tildes, mayúsculas y que sea un correo personal que seguirás usando (no del colegio ni universidad).</span></div>
+          <div style="flex:1"></div>
+          <div style="display:grid;gap:10px">
+            <div style="height:58px;border-radius:20px;background:#1F9D6B;color:#fff;font:700 18px 'Outfit';display:flex;align-items:center;justify-content:center;gap:10px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M7.5 12.5l3 3 6-6.5"></path></svg>Mis datos están bien</div>
+            <div style="height:58px;border-radius:20px;font:700 18px 'Outfit';border:2px solid #E7E2DD;display:flex;align-items:center;justify-content:center;gap:10px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"></path><path d="M13.5 6.5l4 4"></path></svg>Corregir</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1e">
+      <div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>3 · Corrección · correo institucional</div>
+      <div style="width:360px;height:760px;border-radius:46px;border:9px solid #1C1A24;background:#fff;overflow:hidden;display:flex;flex-direction:column">
+        <div style="height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font:700 14px 'Outfit'"><span>9:41</span><span style="display:flex;gap:4px;align-items:center"><i style="width:16px;height:10px;border-radius:2px;background:#1C1A24;display:block"></i><i style="width:22px;height:11px;border-radius:3px;border:1.5px solid #1C1A24;display:block"></i></span></div>
+        <div style="padding:2px 20px 0;height:50px;display:flex;align-items:center"><img src="assets/logo-jc.png" alt="Jóvenes creaTIvos" style="height:46px;width:auto;display:block"></div>
+        <div style="display:flex;gap:6px;padding:14px 22px 0"><div style="flex:1;height:5px;border-radius:3px;background:#F25C2A"></div><div style="flex:1;height:5px;border-radius:3px;background:#F25C2A"></div></div>
+        <div style="flex:1;display:flex;flex-direction:column;padding:20px 22px 22px">
+          <h2 style="margin:0 0 4px;font:800 26px/1.15 'Outfit';letter-spacing:-.025em">Corrige tus datos</h2>
+          <p style="margin:0 0 16px;font:500 15px 'Outfit';color:#615C6E">Escríbelos tal como quieres que salgan.</p>
+          <div style="font:700 14px 'Outfit';margin-bottom:6px">Nombre completo</div>
+          <div style="height:54px;border:2px solid #E7E2DD;border-radius:16px;padding:0 14px;display:flex;align-items:center;font:600 17px 'Outfit'">Valentina Gómez Ríos</div>
+          <div style="font:700 14px 'Outfit';margin:16px 0 6px">Correo personal</div>
+          <div style="height:54px;border:2px solid #D64553;border-radius:16px;padding:0 14px;display:flex;align-items:center;font:600 17px 'Outfit'">vgomez@unal.edu.co</div>
+          <div style="margin-top:6px;font:600 13.5px 'Outfit';color:#C2303D">Usa un correo personal, no institucional</div>
+          <div style="margin-top:18px;display:flex;gap:12px;align-items:flex-start;border:2px solid #E7E2DD;background:#FBF9F7;border-radius:16px;padding:13px 14px">
+            <span style="flex:none;width:26px;height:26px;border-radius:8px;border:2px solid #CFC8C1;background:#fff"></span>
+            <span style="font:600 14.5px/1.4 'Outfit'">Confirmo que este es mi correo personal y lo seguiré usando</span>
+          </div>
+          <div style="flex:1"></div>
+          <div style="height:58px;border-radius:20px;background:#F25C2A;color:#fff;font:700 18px 'Outfit';display:flex;align-items:center;justify-content:center">Guardar mis datos</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1f">
+      <div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a>3 · Corrección · sugerencia de dominio</div>
+      <div style="width:360px;height:760px;border-radius:46px;border:9px solid #1C1A24;background:#fff;overflow:hidden;display:flex;flex-direction:column">
+        <div style="height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font:700 14px 'Outfit'"><span>9:41</span><span style="display:flex;gap:4px;align-items:center"><i style="width:16px;height:10px;border-radius:2px;background:#1C1A24;display:block"></i><i style="width:22px;height:11px;border-radius:3px;border:1.5px solid #1C1A24;display:block"></i></span></div>
+        <div style="padding:2px 20px 0;height:50px;display:flex;align-items:center"><img src="assets/logo-jc.png" alt="Jóvenes creaTIvos" style="height:46px;width:auto;display:block"></div>
+        <div style="display:flex;gap:6px;padding:14px 22px 0"><div style="flex:1;height:5px;border-radius:3px;background:#F25C2A"></div><div style="flex:1;height:5px;border-radius:3px;background:#F25C2A"></div></div>
+        <div style="flex:1;display:flex;flex-direction:column;padding:20px 22px 22px">
+          <h2 style="margin:0 0 4px;font:800 26px/1.15 'Outfit';letter-spacing:-.025em">Corrige tus datos</h2>
+          <p style="margin:0 0 16px;font:500 15px 'Outfit';color:#615C6E">Escríbelos tal como quieres que salgan.</p>
+          <div style="font:700 14px 'Outfit';margin-bottom:6px">Nombre completo</div>
+          <div style="height:54px;border:2px solid #E7E2DD;border-radius:16px;padding:0 14px;display:flex;align-items:center;font:600 17px 'Outfit'">Valentina Gómez Ríos</div>
+          <div style="font:700 14px 'Outfit';margin:16px 0 6px">Correo personal</div>
+          <div style="height:54px;border:2px solid #F2B630;border-radius:16px;padding:0 14px;display:flex;align-items:center;font:600 17px 'Outfit'">valentina.gomez@gmial.com</div>
+          <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:14px;background:#FFF7DC">
+            <span style="font:600 14px 'Outfit';color:#5A4300">¿Quisiste decir <b>gmail.com</b>?</span>
+            <span style="height:38px;padding:0 16px;border-radius:12px;background:#1C1A24;color:#fff;font:700 14px 'Outfit';display:flex;align-items:center">Usar</span>
+          </div>
+          <div style="margin-top:18px;display:flex;gap:12px;align-items:flex-start;border:2px solid #F25C2A;background:#FFF5F0;border-radius:16px;padding:13px 14px">
+            <span style="flex:none;width:26px;height:26px;border-radius:8px;background:#F25C2A;color:#fff;display:flex;align-items:center;justify-content:center;font:800 15px 'Outfit'">✓</span>
+            <span style="font:600 14.5px/1.4 'Outfit'">Confirmo que este es mi correo personal y lo seguiré usando</span>
+          </div>
+          <div style="flex:1"></div>
+          <div style="height:58px;border-radius:20px;background:#F25C2A;color:#fff;font:700 18px 'Outfit';display:flex;align-items:center;justify-content:center">Guardar mis datos</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1h">
+      <div class="dv-olabel"><a class="dv-oid" href="#1h">1h</a>5 · Éxito</div>
+      <div style="width:360px;height:760px;border-radius:46px;border:9px solid #1C1A24;background:#fff;overflow:hidden;display:flex;flex-direction:column">
+        <div style="height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font:700 14px 'Outfit'"><span>9:41</span><span style="display:flex;gap:4px;align-items:center"><i style="width:16px;height:10px;border-radius:2px;background:#1C1A24;display:block"></i><i style="width:22px;height:11px;border-radius:3px;border:1.5px solid #1C1A24;display:block"></i></span></div>
+        <div style="padding:2px 20px 0;height:50px;display:flex;align-items:center"><img src="assets/logo-jc.png" alt="Jóvenes creaTIvos" style="height:46px;width:auto;display:block"></div>
+        <div style="flex:1;display:flex;flex-direction:column;padding:16px 22px 22px">
+          <div style="position:relative;height:240px">
+            <div style="position:absolute;left:50%;top:50%;width:200px;height:200px;margin:-100px 0 0 -100px;border-radius:50%;border:26px solid #FFE1D3"></div>
+            <div style="position:absolute;left:50%;top:50%;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;background:#1F9D6B;display:flex;align-items:center;justify-content:center;color:#fff;font:800 60px/1 'Outfit'">✓</div>
+            <div style="position:absolute;left:22px;top:30px;width:24px;height:24px;border-radius:50%;background:#FFC93C"></div>
+            <div style="position:absolute;right:30px;top:18px;width:18px;height:18px;background:#3E8FD0;transform:rotate(20deg);border-radius:5px"></div>
+            <div style="position:absolute;right:14px;bottom:62px;width:28px;height:28px;border-radius:50%;border:5px solid #F25C2A"></div>
+            <div style="position:absolute;left:30px;bottom:34px;width:16px;height:16px;background:#E2407A;transform:rotate(45deg);border-radius:3px"></div>
+            <div style="position:absolute;left:4px;top:122px;width:10px;height:10px;border-radius:50%;background:#7BC043"></div>
+            <div style="position:absolute;right:82px;bottom:6px;width:12px;height:12px;border-radius:50%;background:#FFC93C"></div>
+          </div>
+          <h2 style="margin:0 0 8px;text-align:center;font:800 29px/1.08 'Outfit';letter-spacing:-.03em">¡Listo! Tus datos quedaron validados</h2>
+          <p style="margin:0 0 18px;text-align:center;font:500 15.5px/1.5 'Outfit';color:#615C6E">Tu certificado llegará a este correo.</p>
+          <div style="border-radius:18px;background:#F7F4F1;padding:14px 16px;display:grid;gap:4px">
+            <div style="font:800 17px 'Outfit'">Valentina Gómez Ríos</div>
+            <div style="font:500 14.5px 'Outfit';color:#615C6E">valentina.gomez@gmail.com</div>
+          </div>
+          <div style="flex:1"></div>
+          <div style="text-align:center;font:600 15px 'Outfit';color:#615C6E;padding-bottom:12px">Ya puedes cerrar esta página</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1i">
+      <div class="dv-olabel"><a class="dv-oid" href="#1i">1i</a>6 · Documento no encontrado</div>
+      <div style="width:360px;height:760px;border-radius:46px;border:9px solid #1C1A24;background:#fff;overflow:hidden;display:flex;flex-direction:column">
+        <div style="height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font:700 14px 'Outfit'"><span>9:41</span><span style="display:flex;gap:4px;align-items:center"><i style="width:16px;height:10px;border-radius:2px;background:#1C1A24;display:block"></i><i style="width:22px;height:11px;border-radius:3px;border:1.5px solid #1C1A24;display:block"></i></span></div>
+        <div style="padding:2px 20px 0;height:50px;display:flex;align-items:center"><img src="assets/logo-jc.png" alt="Jóvenes creaTIvos" style="height:46px;width:auto;display:block"></div>
+        <div style="flex:1;display:flex;flex-direction:column;padding:36px 22px 22px">
+          <div style="width:66px;height:66px;border-radius:22px;background:#FCE6E8;color:#C2303D;display:flex;align-items:center;justify-content:center;font:800 32px 'Outfit';margin-bottom:22px">?</div>
+          <h2 style="margin:0 0 10px;font:800 28px/1.1 'Outfit';letter-spacing:-.03em">Tu documento no aparece</h2>
+          <p style="margin:0 0 18px;font:500 16px/1.5 'Outfit';color:#615C6E">Escríbele a tu monitor. Revisa también que el número esté bien escrito.</p>
+          <div style="border-radius:16px;background:#F7F4F1;padding:14px 16px;font:700 19px 'Outfit';letter-spacing:.04em">1034887210</div>
+          <div style="flex:1"></div>
+          <div style="height:58px;border-radius:20px;background:#F25C2A;color:#fff;font:700 18px 'Outfit';display:flex;align-items:center;justify-content:center">Intentar con otro número</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1j">
+      <div class="dv-olabel"><a class="dv-oid" href="#1j">1j</a>6 · Datos ya validados</div>
+      <div style="width:360px;height:760px;border-radius:46px;border:9px solid #1C1A24;background:#fff;overflow:hidden;display:flex;flex-direction:column">
+        <div style="height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font:700 14px 'Outfit'"><span>9:41</span><span style="display:flex;gap:4px;align-items:center"><i style="width:16px;height:10px;border-radius:2px;background:#1C1A24;display:block"></i><i style="width:22px;height:11px;border-radius:3px;border:1.5px solid #1C1A24;display:block"></i></span></div>
+        <div style="padding:2px 20px 0;height:50px;display:flex;align-items:center"><img src="assets/logo-jc.png" alt="Jóvenes creaTIvos" style="height:46px;width:auto;display:block"></div>
+        <div style="flex:1;display:flex;flex-direction:column;padding:36px 22px 22px">
+          <div style="width:66px;height:66px;border-radius:22px;background:#E3F5EC;color:#1F9D6B;display:flex;align-items:center;justify-content:center;font:800 32px 'Outfit';margin-bottom:22px">✓</div>
+          <h2 style="margin:0 0 10px;font:800 28px/1.1 'Outfit';letter-spacing:-.03em">Ya validaste tus datos</h2>
+          <p style="margin:0 0 18px;font:500 16px/1.5 'Outfit';color:#615C6E">No tienes que hacer nada más. Si necesitas un cambio, escríbele a tu monitor.</p>
+          <div style="border-radius:18px;background:#F7F4F1;padding:14px 16px;display:grid;gap:4px">
+            <div style="font:800 17px 'Outfit'">Isabella Hernández Mejía</div>
+            <div style="font:500 14.5px 'Outfit';color:#615C6E">isabella.hernandez@gmail.com</div>
+            <div style="font:600 13px 'Outfit';color:#17734F;margin-top:4px">Validado el 14 oct · 7:32 p. m.</div>
+          </div>
+          <div style="flex:1"></div>
+          <div style="height:58px;border-radius:20px;background:#F5F2EF;font:700 18px 'Outfit';display:flex;align-items:center;justify-content:center">Volver al inicio</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="dv-turn" id="t2">
+  <div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">Vista 2 · Monitor</span></div>
+  <p style="margin:0 0 26px;font:500 14px/1.5 'Outfit';color:#615C6E">Bogotá · Grupo 2 · Laura Méndez. <span style="display:inline-flex;gap:14px;align-items:center;flex-wrap:wrap"><span style="display:inline-flex;gap:6px;align-items:center"><i style="width:9px;height:9px;border-radius:50%;background:#1F9D6B;display:inline-block"></i>Validado</span><span style="display:inline-flex;gap:6px;align-items:center"><i style="width:9px;height:9px;border-radius:50%;background:#F2B630;display:inline-block"></i>Corregido (por revisar)</span><span style="display:inline-flex;gap:6px;align-items:center"><i style="width:9px;height:9px;border-radius:50%;background:#D64553;display:inline-block"></i>Pendiente</span></span></p>
+  <div class="dv-opts">
+
+    <div class="dv-opt" id="2a">
+      <div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a><span style="color:#C9461B;font-weight:700">Escritorio interactivo</span> · filtra, busca, aprueba, edita, valida, copia pendientes</div>
+      <div style="width:1280px;height:840px;border-radius:16px;background:#fff;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 60px -24px rgba(120,40,10,.3);border:1px solid #E4DDD6;position:relative">
+        <div style="height:40px;flex:none;background:#F5F2EF;display:flex;align-items:center;gap:8px;padding:0 16px;border-bottom:1px solid #EAE4DE"><i style="width:11px;height:11px;border-radius:50%;background:#E0D9D2;display:block"></i><i style="width:11px;height:11px;border-radius:50%;background:#E0D9D2;display:block"></i><i style="width:11px;height:11px;border-radius:50%;background:#E0D9D2;display:block"></i><div style="margin-left:16px;height:24px;flex:1;max-width:420px;border-radius:7px;background:#fff;font:500 12px 'JetBrains Mono';color:#615C6E;display:flex;align-items:center;padding:0 10px">validacion.jovenescreativos.co/monitor</div></div>
+        <div style="flex:1;display:flex;min-height:0">
+          <div style="width:228px;flex:none;border-right:1px solid #F0EBE6;padding:18px 16px 20px;display:flex;flex-direction:column;gap:22px;background:#FCFAF8">
+            <img src="assets/logo-jc.png" alt="Jóvenes creaTIvos" style="height:62px;width:auto;display:block;align-self:flex-start">
+            <div style="display:grid;gap:4px">
+              <div style="height:42px;border-radius:12px;background:#FFE9DF;color:#9C3210;font:700 15px 'Outfit';display:flex;align-items:center;padding:0 12px">Mi grupo</div>
+              <div style="height:42px;border-radius:12px;color:#615C6E;font:600 15px 'Outfit';display:flex;align-items:center;padding:0 12px">Ayuda</div>
+            </div>
+            <div style="flex:1"></div>
+            <div style="display:flex;gap:10px;align-items:center">
+              <div style="width:38px;height:38px;border-radius:50%;background:#FFC93C;display:flex;align-items:center;justify-content:center;font:800 14px 'Outfit'">LM</div>
+              <div><div style="font:700 14px 'Outfit'">Laura Méndez</div><div style="font:500 12.5px 'Outfit';color:#615C6E">Monitora · Bogotá G2</div></div>
+            </div>
+          </div>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;padding:26px 30px 0">
+            <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap">
+              <div>
+                <div style="font:600 12px 'JetBrains Mono';color:#615C6E;letter-spacing:.06em;text-transform:uppercase">Bogotá · Grupo 2</div>
+                <div style="font:800 32px/1.1 'Outfit';letter-spacing:-.03em;margin-top:6px;white-space:nowrap">{{ m.validados }} de {{ m.total }} validados</div>
+              </div>
+              <button onClick="{{ copyPend }}" style="height:46px;padding:0 18px;border-radius:14px;border:0;background:#1C1A24;color:#fff;font:700 15px 'Outfit'">Copiar lista de pendientes ({{ m.pendientes }})</button>
+            </div>
+            <div style="height:12px;border-radius:6px;background:#F2EEEA;margin-top:14px;overflow:hidden;display:flex">
+              <div style="width:{{ m.pctVal }};background:#1F9D6B;transition:width .4s"></div><div style="width:{{ m.pctCorr }};background:#F2B630;transition:width .4s"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:18px">
+              <sc-for list="{{ mFilters }}" as="f" hint-placeholder-count="4">
+                <button onClick="{{ f.on }}" style="text-align:left;border-radius:16px;padding:14px 16px;border:2px solid {{ f.border }};background:{{ f.bg }};display:flex;flex-direction:column;gap:6px">
+                  <span style="display:flex;align-items:center;gap:8px;font:600 14px 'Outfit';color:#4A4556"><i style="width:10px;height:10px;border-radius:50%;background:{{ f.dot }};display:block"></i>{{ f.label }}</span>
+                  <span style="font:800 28px/1 'Outfit';color:#1C1A24">{{ f.count }}</span>
+                </button>
+              </sc-for>
+            </div>
+            <div style="margin-top:16px;height:46px;border:2px solid #E7E2DD;border-radius:14px;display:flex;align-items:center;padding:0 14px;gap:10px;flex:none">
+              <span style="width:14px;height:14px;border-radius:50%;border:2px solid #9A94A6;flex:none"></span>
+              <input value="{{ mQ }}" onChange="{{ onMQ }}" placeholder="Buscar por nombre, correo o documento" style="flex:1;border:0;font:500 15px 'Outfit';color:#1C1A24;background:transparent">
+            </div>
+            <div style="display:grid;grid-template-columns:minmax(0,2.2fr) minmax(0,2.4fr) 140px 130px 230px;gap:16px;padding:16px 4px 10px;border-bottom:1px solid #F0EBE6;font:600 11px 'JetBrains Mono';letter-spacing:.06em;text-transform:uppercase;color:#8A8496">
+              <span>Estudiante</span><span>Correo</span><span>Estado</span><span>Validación</span><span></span>
+            </div>
+            <div style="flex:1;overflow:auto;min-height:0">
+              <sc-for list="{{ mRows }}" as="r" hint-placeholder-count="6">
+                <div style="border-bottom:1px solid #F4F0EC;padding:12px 4px">
+                  <div style="display:grid;grid-template-columns:minmax(0,2.2fr) minmax(0,2.4fr) 140px 130px 230px;gap:16px;align-items:center">
+                    <div style="min-width:0"><div style="font:700 15px 'Outfit';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</div><div style="font:500 12px 'JetBrains Mono';color:#8A8496;margin-top:2px">{{ r.doc }}</div></div>
+                    <div style="font:500 14px 'Outfit';color:#3F3A4A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.email }}</div>
+                    <div><span style="display:inline-flex;align-items:center;gap:7px;height:28px;padding:0 11px;border-radius:999px;background:{{ r.badgeBg }};color:{{ r.badgeFg }};font:700 13px 'Outfit'"><i style="width:8px;height:8px;border-radius:50%;background:{{ r.dot }};display:block"></i>{{ r.label }}</span></div>
+                    <div style="font:500 13.5px 'Outfit';color:#615C6E">{{ r.fecha }}</div>
+                    <div style="display:flex;gap:8px;justify-content:flex-end">
+                      <sc-if value="{{ r.isCorr }}">
+                        <button onClick="{{ r.onApprove }}" style="height:38px;padding:0 16px;border-radius:12px;border:0;background:#1F9D6B;color:#fff;font:700 14px 'Outfit'">Aprobar</button>
+                        <button onClick="{{ r.onEdit }}" style="height:38px;padding:0 16px;border-radius:12px;border:1.5px solid #E7E2DD;background:#fff;color:#1C1A24;font:700 14px 'Outfit'">Editar</button>
+                      </sc-if>
+                      <sc-if value="{{ r.isPend }}">
+                        <button onClick="{{ r.onValidate }}" style="height:38px;padding:0 14px;border-radius:12px;border:0;background:#F25C2A;color:#fff;font:700 14px 'Outfit'">Validar por el estudiante</button>
+                      </sc-if>
+                    </div>
+                  </div>
+                  <sc-if value="{{ r.isCorr }}">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;max-width:780px">
+                      <div style="border-radius:12px;background:#F7F4F1;padding:10px 12px"><div style="font:600 10.5px 'JetBrains Mono';letter-spacing:.06em;color:#8A8496;margin-bottom:4px">ANTES</div><div style="font:600 14px 'Outfit';color:#615C6E;text-decoration:line-through">{{ r.prevName }}</div><div style="font:500 13px 'Outfit';color:#615C6E;text-decoration:line-through">{{ r.prevEmail }}</div></div>
+                      <div style="border-radius:12px;background:#FFF7DC;padding:10px 12px"><div style="font:600 10.5px 'JetBrains Mono';letter-spacing:.06em;color:#8A5A00;margin-bottom:4px">AHORA</div><div style="font:700 14px 'Outfit'">{{ r.name }}</div><div style="font:600 13px 'Outfit'">{{ r.email }}</div></div>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+              <sc-if value="{{ mEmpty }}">
+                <div style="padding:60px 20px;text-align:center;display:grid;gap:6px;justify-items:center">
+                  <div style="width:56px;height:56px;border-radius:18px;background:{{ mEmptyBg }};display:flex;align-items:center;justify-content:center;font:800 24px 'Outfit';color:{{ mEmptyFg }};margin-bottom:6px">{{ mEmptyIcon }}</div>
+                  <div style="font:800 19px 'Outfit'">{{ mEmptyTitle }}</div>
+                  <div style="font:500 15px 'Outfit';color:#615C6E">{{ mEmptyText }}</div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </div>
+        <sc-if value="{{ modalOpen }}">
+          <div style="position:absolute;inset:0;background:rgba(28,26,36,.45);display:flex;align-items:center;justify-content:center">
+            <div style="width:460px;border-radius:22px;background:#fff;padding:24px;display:flex;flex-direction:column;box-shadow:0 30px 60px -20px rgba(0,0,0,.4)">
+              <div style="font:800 22px 'Outfit';letter-spacing:-.02em">{{ modalTitle }}</div>
+              <div style="font:500 14px 'Outfit';color:#615C6E;margin:4px 0 18px">{{ modalSub }}</div>
+              <label style="font:700 14px 'Outfit';margin-bottom:6px">Nombre completo</label>
+              <input value="{{ modalName }}" onChange="{{ onModalName }}" style="height:50px;border:2px solid #E7E2DD;border-radius:14px;padding:0 12px;font:600 16px 'Outfit';color:#1C1A24">
+              <label style="font:700 14px 'Outfit';margin:14px 0 6px">Correo personal</label>
+              <input value="{{ modalEmail }}" onChange="{{ onModalEmail }}" style="height:50px;border:2px solid {{ modalEmailBorder }};border-radius:14px;padding:0 12px;font:600 16px 'Outfit';color:#1C1A24">
+              <sc-if value="{{ modalErr }}"><div style="margin-top:6px;font:600 13.5px 'Outfit';color:#C2303D">{{ modalErr }}</div></sc-if>
+              <sc-if value="{{ modalSuggest }}"><button onClick="{{ modalApplySuggest }}" style="margin-top:8px;align-self:flex-start;border:0;background:#FFF7DC;color:#5A4300;border-radius:10px;height:36px;padding:0 12px;font:600 14px 'Outfit'">¿Quisiste decir {{ modalSuggestDomain }}? Usar</button></sc-if>
+              <div style="display:flex;gap:10px;margin-top:22px;justify-content:flex-end">
+                <button onClick="{{ closeModal }}" style="height:46px;padding:0 18px;border-radius:14px;border:1.5px solid #E7E2DD;background:#fff;font:700 15px 'Outfit';color:#1C1A24">Cancelar</button>
+                <button onClick="{{ saveModal }}" style="height:46px;padding:0 18px;border-radius:14px;border:0;background:#F25C2A;color:#fff;font:700 15px 'Outfit'">Guardar como validado</button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ toast }}">
+          <div style="position:absolute;left:50%;bottom:24px;transform:translateX(-50%);background:#1C1A24;color:#fff;border-radius:14px;padding:13px 18px;font:600 15px 'Outfit';box-shadow:0 10px 30px -10px rgba(0,0,0,.4);white-space:nowrap">{{ toast }}</div>
+        </sc-if>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="2b">
+      <div class="dv-olabel"><a class="dv-oid" href="#2b">2b</a>1 · Login</div>
+      <div style="width:360px;height:760px;border-radius:46px;border:9px solid #1C1A24;background:#fff;overflow:hidden;display:flex;flex-direction:column">
+        <div style="height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font:700 14px 'Outfit'"><span>9:41</span><span style="display:flex;gap:4px;align-items:center"><i style="width:16px;height:10px;border-radius:2px;background:#1C1A24;display:block"></i><i style="width:22px;height:11px;border-radius:3px;border:1.5px solid #1C1A24;display:block"></i></span></div>
+        <div style="padding:2px 20px 0;height:50px;display:flex;align-items:center"><img src="assets/logo-jc.png" alt="Jóvenes creaTIvos" style="height:46px;width:auto;display:block"></div>
+        <div style="flex:1;display:flex;flex-direction:column;padding:36px 22px 22px">
+          <div style="font:600 12px 'JetBrains Mono';color:#C9461B;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px">Monitores</div>
+          <h2 style="margin:0 0 26px;font:800 30px/1.1 'Outfit';letter-spacing:-.03em">Ingresa a tu panel</h2>
+          <div style="font:700 14px 'Outfit';margin-bottom:6px">Usuario</div>
+          <div style="height:54px;border:2px solid #E7E2DD;border-radius:16px;padding:0 14px;display:flex;align-items:center;font:600 17px 'Outfit'">laura.mendez</div>
+          <div style="font:700 14px 'Outfit';margin:16px 0 6px">Clave</div>
+          <div style="height:54px;border:2px solid #F25C2A;box-shadow:0 0 0 4px #FFE9DF;border-radius:16px;padding:0 14px;display:flex;align-items:center;justify-content:space-between;font:700 18px 'Outfit';letter-spacing:.2em">••••••••<span style="font:600 14px 'Outfit';letter-spacing:0;color:#C9461B">Ver</span></div>
+          <div style="flex:1"></div>
+          <div style="height:58px;border-radius:20px;background:#F25C2A;color:#fff;font:700 18px 'Outfit';display:flex;align-items:center;justify-content:center">Entrar</div>
+          <div style="text-align:center;margin-top:14px;font:500 13px 'Outfit';color:#615C6E">¿Olvidaste la clave? Pídela a coordinación</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="2c">
+      <div class="dv-olabel"><a class="dv-oid" href="#2c">2c</a>Login · error</div>
+      <div style="width:360px;height:760px;border-radius:46px;border:9px solid #1C1A24;background:#fff;overflow:hidden;display:flex;flex-direction:column">
+        <div style="height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font:700 14px 'Outfit'"><span>9:41</span><span style="display:flex;gap:4px;align-items:center"><i style="width:16px;height:10px;border-radius:2px;background:#1C1A24;display:block"></i><i style="width:22px;height:11px;border-radius:3px;border:1.5px solid #1C1A24;display:block"></i></span></div>
+        <div style="padding:2px 20px 0;height:50px;display:flex;align-items:center"><img src="assets/logo-jc.png" alt="Jóvenes creaTIvos" style="height:46px;width:auto;display:block"></div>
+        <div style="flex:1;display:flex;flex-direction:column;padding:36px 22px 22px">
+          <div style="font:600 12px 'JetBrains Mono';color:#C9461B;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px">Monitores</div>
+          <h2 style="margin:0 0 18px;font:800 30px/1.1 'Outfit';letter-spacing:-.03em">Ingresa a tu panel</h2>
+          <div style="padding:12px 14px;border-radius:14px;background:#FCE6E8;color:#9E2430;font:600 14.5px/1.4 'Outfit';margin-bottom:16px">Usuario o clave incorrectos. Revisa e intenta otra vez.</div>
+          <div style="font:700 14px 'Outfit';margin-bottom:6px">Usuario</div>
+          <div style="height:54px;border:2px solid #E7E2DD;border-radius:16px;padding:0 14px;display:flex;align-items:center;font:600 17px 'Outfit'">laura.mendez</div>
+          <div style="font:700 14px 'Outfit';margin:16px 0 6px">Clave</div>
+          <div style="height:54px;border:2px solid #D64553;border-radius:16px;padding:0 14px;display:flex;align-items:center;font:700 18px 'Outfit';letter-spacing:.2em">••••••</div>
+          <div style="flex:1"></div>
+          <div style="height:58px;border-radius:20px;background:#F25C2A;color:#fff;font:700 18px 'Outfit';display:flex;align-items:center;justify-content:center">Entrar</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="2d">
+      <div class="dv-olabel"><a class="dv-oid" href="#2d">2d</a>2–3 · Panel + lista</div>
+      <div style="width:360px;height:760px;border-radius:46px;border:9px solid #1C1A24;background:#fff;overflow:hidden;display:flex;flex-direction:column">
+        <div style="height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font:700 14px 'Outfit'"><span>9:41</span><span style="display:flex;gap:4px;align-items:center"><i style="width:16px;height:10px;border-radius:2px;background:#1C1A24;display:block"></i><i style="width:22px;height:11px;border-radius:3px;border:1.5px solid #1C1A24;display:block"></i></span></div>
+        <div style="padding:2px 18px 0;height:50px;display:flex;justify-content:space-between;align-items:center"><img src="assets/logo-jc.png" alt="Jóvenes creaTIvos" style="height:46px;width:auto;display:block"><div style="width:36px;height:36px;border-radius:50%;background:#FFC93C;display:flex;align-items:center;justify-content:center;font:800 13px 'Outfit'">LM</div></div>
+        <div style="padding:14px 18px 0">
+          <div style="font:600 11px 'JetBrains Mono';color:#615C6E;letter-spacing:.06em;text-transform:uppercase">Bogotá · Grupo 2</div>
+          <div style="font:800 27px/1.1 'Outfit';letter-spacing:-.03em;margin-top:4px">28 de 37 validados</div>
+          <div style="height:10px;border-radius:5px;background:#F2EEEA;margin-top:10px;overflow:hidden;display:flex"><div style="width:75.7%;background:#1F9D6B"></div><div style="width:8.1%;background:#F2B630"></div></div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px">
+            <div style="border-radius:14px;background:#E3F5EC;padding:10px 12px"><div style="display:flex;align-items:center;gap:6px;font:600 12.5px 'Outfit';color:#17734F"><i style="width:8px;height:8px;border-radius:50%;background:#1F9D6B;display:block"></i>Validado</div><div style="font:800 24px 'Outfit';margin-top:2px">28</div></div>
+            <div style="border-radius:14px;background:#FFF7DC;padding:10px 12px"><div style="display:flex;align-items:center;gap:6px;font:600 12.5px 'Outfit';color:#8A5A00"><i style="width:8px;height:8px;border-radius:50%;background:#F2B630;display:block"></i>Corregido</div><div style="font:800 24px 'Outfit';margin-top:2px">3</div></div>
+            <div style="border-radius:14px;background:#FCE6E8;padding:10px 12px"><div style="display:flex;align-items:center;gap:6px;font:600 12.5px 'Outfit';color:#9E2430"><i style="width:8px;height:8px;border-radius:50%;background:#D64553;display:block"></i>Pendiente</div><div style="font:800 24px 'Outfit';margin-top:2px">6</div></div>
+          </div>
+          <div style="height:46px;border:2px solid #E7E2DD;border-radius:14px;display:flex;align-items:center;padding:0 12px;gap:10px;margin-top:12px;font:500 15px 'Outfit';color:#8A8496"><span style="width:13px;height:13px;border-radius:50%;border:2px solid #9A94A6"></span>Buscar estudiante</div>
+          <div style="display:flex;gap:6px;margin-top:10px">
+            <span style="height:34px;padding:0 13px;border-radius:999px;background:#1C1A24;color:#fff;font:700 13.5px 'Outfit';display:flex;align-items:center">Todos</span>
+            <span style="height:34px;padding:0 13px;border-radius:999px;background:#F5F2EF;font:600 13.5px 'Outfit';display:flex;align-items:center;gap:6px"><i style="width:9px;height:9px;border-radius:50%;background:#F2B630;display:inline-block"></i>Corregidos</span>
+            <span style="height:34px;padding:0 13px;border-radius:999px;background:#F5F2EF;font:600 13.5px 'Outfit';display:flex;align-items:center;gap:6px"><i style="width:9px;height:9px;border-radius:50%;background:#D64553;display:inline-block"></i>Pendientes</span>
+          </div>
+        </div>
+        <div style="flex:1;overflow:hidden;padding:4px 18px 0">
+          <sc-for list="{{ mobRows }}" as="r" hint-placeholder-count="5">
+            <div style="display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid #F4F0EC">
+              <i style="width:10px;height:10px;border-radius:50%;background:{{ r.dot }};display:block;flex:none"></i>
+              <div style="flex:1;min-width:0"><div style="font:700 15px 'Outfit';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</div><div style="font:500 13px 'Outfit';color:#615C6E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.email }}</div></div>
+              <div style="text-align:right;flex:none"><div style="font:700 12.5px 'Outfit';color:{{ r.badgeFg }}">{{ r.label }}</div><div style="font:500 12px 'Outfit';color:#8A8496">{{ r.fechaShort }}</div></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="2e">
+      <div class="dv-olabel"><a class="dv-oid" href="#2e">2e</a>4 · Corregidos · antes / ahora</div>
+      <div style="width:360px;height:760px;border-radius:46px;border:9px solid #1C1A24;background:#fff;overflow:hidden;display:flex;flex-direction:column">
+        <div style="height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font:700 14px 'Outfit'"><span>9:41</span><span style="display:flex;gap:4px;align-items:center"><i style="width:16px;height:10px;border-radius:2px;background:#1C1A24;display:block"></i><i style="width:22px;height:11px;border-radius:3px;border:1.5px solid #1C1A24;display:block"></i></span></div>
+        <div style="padding:8px 18px 0;display:flex;align-items:center;gap:10px"><span style="height:38px;width:38px;border-radius:12px;background:#F5F2EF;font:700 16px 'Outfit';display:flex;align-items:center;justify-content:center">←</span><div style="font:800 20px 'Outfit';letter-spacing:-.02em">Corregidos por revisar</div></div>
+        <div style="flex:1;overflow:hidden;padding:14px 18px;display:grid;gap:12px;align-content:start">
+          <sc-for list="{{ mobCorr }}" as="r" hint-placeholder-count="2">
+            <div style="border:1.5px solid #EEE9E4;border-radius:20px;padding:14px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font:600 11.5px 'JetBrains Mono';color:#8A8496">{{ r.doc }}</span><span style="font:600 12.5px 'Outfit';color:#8A5A00">{{ r.fecha }}</span></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div style="border-radius:12px;background:#F7F4F1;padding:9px 10px;min-width:0"><div style="font:600 10px 'JetBrains Mono';letter-spacing:.06em;color:#8A8496;margin-bottom:4px">ANTES</div><div style="font:600 13.5px/1.3 'Outfit';color:#615C6E;text-decoration:line-through">{{ r.prevName }}</div><div style="font:500 12.5px/1.3 'Outfit';color:#615C6E;text-decoration:line-through;word-break:break-all;margin-top:3px">{{ r.prevEmail }}</div></div>
+                <div style="border-radius:12px;background:#FFF7DC;padding:9px 10px;min-width:0"><div style="font:600 10px 'JetBrains Mono';letter-spacing:.06em;color:#8A5A00;margin-bottom:4px">AHORA</div><div style="font:700 13.5px/1.3 'Outfit'">{{ r.name }}</div><div style="font:600 12.5px/1.3 'Outfit';word-break:break-all;margin-top:3px">{{ r.email }}</div></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+                <div style="height:48px;border-radius:14px;background:#1F9D6B;color:#fff;font:700 15px 'Outfit';display:flex;align-items:center;justify-content:center">Aprobar</div>
+                <div style="height:48px;border-radius:14px;border:1.5px solid #E7E2DD;font:700 15px 'Outfit';display:flex;align-items:center;justify-content:center">Editar</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="2f">
+      <div class="dv-olabel"><a class="dv-oid" href="#2f">2f</a>5 · Pendientes · lista copiada</div>
+      <div style="width:360px;height:760px;border-radius:46px;border:9px solid #1C1A24;background:#fff;overflow:hidden;display:flex;flex-direction:column;position:relative">
+        <div style="height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font:700 14px 'Outfit'"><span>9:41</span><span style="display:flex;gap:4px;align-items:center"><i style="width:16px;height:10px;border-radius:2px;background:#1C1A24;display:block"></i><i style="width:22px;height:11px;border-radius:3px;border:1.5px solid #1C1A24;display:block"></i></span></div>
+        <div style="padding:8px 18px 0;display:flex;align-items:center;gap:10px"><span style="height:38px;width:38px;border-radius:12px;background:#F5F2EF;font:700 16px 'Outfit';display:flex;align-items:center;justify-content:center">←</span><div style="font:800 20px 'Outfit';letter-spacing:-.02em">Pendientes · 6</div></div>
+        <div style="padding:14px 18px 0"><div style="height:54px;border-radius:18px;background:#1C1A24;color:#fff;font:700 16px 'Outfit';display:flex;align-items:center;justify-content:center">Copiar lista de pendientes</div></div>
+        <div style="flex:1;overflow:hidden;padding:6px 18px 0">
+          <sc-for list="{{ mobPend }}" as="r" hint-placeholder-count="5">
+            <div style="display:flex;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid #F4F0EC">
+              <i style="width:10px;height:10px;border-radius:50%;background:#D64553;display:block;flex:none"></i>
+              <div style="flex:1;min-width:0"><div style="font:700 15px 'Outfit';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</div><div style="font:500 11.5px 'JetBrains Mono';color:#8A8496">{{ r.doc }}</div></div>
+              <div style="flex:none;height:44px;padding:0 12px;border-radius:12px;background:#FFE9DF;color:#9C3210;font:700 13.5px 'Outfit';display:flex;align-items:center">Validar</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="position:absolute;left:16px;right:16px;bottom:22px;border-radius:16px;background:#1F9D6B;color:#fff;padding:14px 16px;font:600 14.5px/1.4 'Outfit';box-shadow:0 12px 30px -10px rgba(0,0,0,.35)"><b>Lista copiada.</b> Pégala en el grupo de WhatsApp.</div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="2g">
+      <div class="dv-olabel"><a class="dv-oid" href="#2g">2g</a>Validar por el estudiante</div>
+      <div style="width:360px;height:760px;border-radius:46px;border:9px solid #1C1A24;background:#fff;overflow:hidden;display:flex;flex-direction:column">
+        <div style="height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font:700 14px 'Outfit'"><span>9:41</span><span style="display:flex;gap:4px;align-items:center"><i style="width:16px;height:10px;border-radius:2px;background:#1C1A24;display:block"></i><i style="width:22px;height:11px;border-radius:3px;border:1.5px solid #1C1A24;display:block"></i></span></div>
+        <div style="padding:8px 18px 0;display:flex;align-items:center;gap:10px"><span style="height:38px;width:38px;border-radius:12px;background:#F5F2EF;font:700 16px 'Outfit';display:flex;align-items:center;justify-content:center">←</span><div style="font:800 20px 'Outfit';letter-spacing:-.02em">Validar por el estudiante</div></div>
+        <div style="flex:1;display:flex;flex-direction:column;padding:18px 22px 22px">
+          <div style="padding:12px 14px;border-radius:14px;background:#FFF1EA;font:500 14px/1.4 'Outfit';color:#7A3A20;margin-bottom:18px">Confirma los datos con el estudiante (llamada o WhatsApp) antes de guardar.</div>
+          <div style="font:700 14px 'Outfit';margin-bottom:6px">Nombre completo</div>
+          <div style="height:54px;border:2px solid #E7E2DD;border-radius:16px;padding:0 14px;display:flex;align-items:center;font:600 17px 'Outfit'">Kevin Romero Henao</div>
+          <div style="font:700 14px 'Outfit';margin:16px 0 6px">Correo personal</div>
+          <div style="height:54px;border:2px solid #F25C2A;box-shadow:0 0 0 4px #FFE9DF;border-radius:16px;padding:0 14px;display:flex;align-items:center;font:600 17px 'Outfit'">kevin.romero@hotmail.com</div>
+          <div style="margin-top:18px;display:flex;gap:12px;align-items:flex-start;border:2px solid #F25C2A;background:#FFF5F0;border-radius:16px;padding:13px 14px">
+            <span style="flex:none;width:26px;height:26px;border-radius:8px;background:#F25C2A;color:#fff;display:flex;align-items:center;justify-content:center;font:800 15px 'Outfit'">✓</span>
+            <span style="font:600 14.5px/1.4 'Outfit'">El estudiante confirmó que es su correo personal</span>
+          </div>
+          <div style="flex:1"></div>
+          <div style="height:58px;border-radius:20px;background:#F25C2A;color:#fff;font:700 18px 'Outfit';display:flex;align-items:center;justify-content:center">Guardar como validado</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="2h">
+      <div class="dv-olabel"><a class="dv-oid" href="#2h">2h</a>Carga</div>
+      <div style="width:360px;height:760px;border-radius:46px;border:9px solid #1C1A24;background:#fff;overflow:hidden;display:flex;flex-direction:column">
+        <div style="height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font:700 14px 'Outfit'"><span>9:41</span><span style="display:flex;gap:4px;align-items:center"><i style="width:16px;height:10px;border-radius:2px;background:#1C1A24;display:block"></i><i style="width:22px;height:11px;border-radius:3px;border:1.5px solid #1C1A24;display:block"></i></span></div>
+        <div style="padding:2px 18px 0;height:50px;display:flex;align-items:center"><img src="assets/logo-jc.png" alt="Jóvenes creaTIvos" style="height:46px;width:auto;display:block"></div>
+        <div style="padding:16px 18px;display:grid;gap:12px;animation:shimmer 1.4s ease-in-out infinite">
+          <div style="height:12px;width:40%;border-radius:6px;background:#F0EBE6"></div>
+          <div style="height:28px;width:75%;border-radius:8px;background:#F0EBE6"></div>
+          <div style="height:10px;border-radius:5px;background:#F0EBE6"></div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><div style="height:66px;border-radius:14px;background:#F5F2EF"></div><div style="height:66px;border-radius:14px;background:#F5F2EF"></div><div style="height:66px;border-radius:14px;background:#F5F2EF"></div></div>
+          <div style="height:46px;border-radius:14px;background:#F5F2EF"></div>
+          <div style="display:flex;gap:12px;align-items:center;padding-top:8px"><div style="width:10px;height:10px;border-radius:50%;background:#F0EBE6"></div><div style="flex:1;display:grid;gap:6px"><div style="height:12px;width:70%;border-radius:6px;background:#F0EBE6"></div><div style="height:10px;width:50%;border-radius:5px;background:#F5F2EF"></div></div></div>
+          <div style="display:flex;gap:12px;align-items:center;padding-top:8px"><div style="width:10px;height:10px;border-radius:50%;background:#F0EBE6"></div><div style="flex:1;display:grid;gap:6px"><div style="height:12px;width:60%;border-radius:6px;background:#F0EBE6"></div><div style="height:10px;width:45%;border-radius:5px;background:#F5F2EF"></div></div></div>
+          <div style="display:flex;gap:12px;align-items:center;padding-top:8px"><div style="width:10px;height:10px;border-radius:50%;background:#F0EBE6"></div><div style="flex:1;display:grid;gap:6px"><div style="height:12px;width:75%;border-radius:6px;background:#F0EBE6"></div><div style="height:10px;width:55%;border-radius:5px;background:#F5F2EF"></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="2i">
+      <div class="dv-olabel"><a class="dv-oid" href="#2i">2i</a>Vacío · sin pendientes</div>
+      <div style="width:360px;height:760px;border-radius:46px;border:9px solid #1C1A24;background:#fff;overflow:hidden;display:flex;flex-direction:column">
+        <div style="height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font:700 14px 'Outfit'"><span>9:41</span><span style="display:flex;gap:4px;align-items:center"><i style="width:16px;height:10px;border-radius:2px;background:#1C1A24;display:block"></i><i style="width:22px;height:11px;border-radius:3px;border:1.5px solid #1C1A24;display:block"></i></span></div>
+        <div style="padding:8px 18px 0;display:flex;align-items:center;gap:10px"><span style="height:38px;width:38px;border-radius:12px;background:#F5F2EF;font:700 16px 'Outfit';display:flex;align-items:center;justify-content:center">←</span><div style="font:800 20px 'Outfit';letter-spacing:-.02em">Pendientes · 0</div></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px">
+          <div style="position:relative;width:130px;height:130px;margin-bottom:22px"><div style="position:absolute;inset:0;border-radius:50%;border:16px solid #FFE1D3"></div><div style="position:absolute;inset:30px;border-radius:50%;background:#1F9D6B;display:flex;align-items:center;justify-content:center;color:#fff;font:800 34px 'Outfit'">✓</div><div style="position:absolute;right:-6px;top:4px;width:18px;height:18px;border-radius:50%;background:#FFC93C"></div><div style="position:absolute;left:-4px;bottom:12px;width:12px;height:12px;background:#3E8FD0;transform:rotate(45deg)"></div></div>
+          <div style="font:800 24px/1.15 'Outfit';letter-spacing:-.02em;margin-bottom:8px">¡Tu grupo está al día!</div>
+          <div style="font:500 15.5px/1.5 'Outfit';color:#615C6E">No hay estudiantes pendientes. Revisa si quedan corregidos por aprobar.</div>
+          <div style="margin-top:22px;height:50px;padding:0 18px;border-radius:16px;background:#FFF7DC;color:#5A4300;font:700 15px 'Outfit';display:flex;align-items:center;gap:8px"><i style="width:9px;height:9px;border-radius:50%;background:#F2B630;display:inline-block"></i>Ver 3 corregidos</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="2j">
+      <div class="dv-olabel"><a class="dv-oid" href="#2j">2j</a>Búsqueda sin resultados</div>
+      <div style="width:360px;height:760px;border-radius:46px;border:9px solid #1C1A24;background:#fff;overflow:hidden;display:flex;flex-direction:column">
+        <div style="height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font:700 14px 'Outfit'"><span>9:41</span><span style="display:flex;gap:4px;align-items:center"><i style="width:16px;height:10px;border-radius:2px;background:#1C1A24;display:block"></i><i style="width:22px;height:11px;border-radius:3px;border:1.5px solid #1C1A24;display:block"></i></span></div>
+        <div style="padding:2px 18px 0;height:50px;display:flex;align-items:center"><img src="assets/logo-jc.png" alt="Jóvenes creaTIvos" style="height:46px;width:auto;display:block"></div>
+        <div style="padding:16px 18px 0"><div style="height:48px;border:2px solid #F25C2A;border-radius:14px;display:flex;align-items:center;padding:0 12px;gap:10px;font:600 16px 'Outfit'"><span style="width:13px;height:13px;border-radius:50%;border:2px solid #F25C2A"></span>Camilo Arbeláez</div></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px">
+          <div style="width:60px;height:60px;border-radius:20px;background:#F5F2EF;display:flex;align-items:center;justify-content:center;font:800 26px 'Outfit';color:#8A8496;margin-bottom:16px">∅</div>
+          <div style="font:800 21px 'Outfit';margin-bottom:6px">No encontramos a nadie</div>
+          <div style="font:500 15px/1.5 'Outfit';color:#615C6E">Prueba con el documento o solo un apellido.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="dv-turn" id="t3">
+  <div class="dv-thd"><a class="dv-tid" href="#t3">3</a><span class="dv-tname">Vista 3 · Coordinación</span></div>
+  <p style="margin:0 0 26px;font:500 14px/1.5 'Outfit';color:#615C6E">Avance total y por ciudad, de menor a mayor %. La lista final solo incluye validados (verde).</p>
+  <div class="dv-opts">
+
+    <div class="dv-opt" id="3a">
+      <div class="dv-olabel"><a class="dv-oid" href="#3a">3a</a><span style="color:#C9461B;font-weight:700">Escritorio interactivo</span> · descarga con carga y éxito</div>
+      <div style="width:1280px;border-radius:16px;background:#fff;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 60px -24px rgba(120,40,10,.3);border:1px solid #E4DDD6">
+        <div style="height:40px;flex:none;background:#F5F2EF;display:flex;align-items:center;gap:8px;padding:0 16px;border-bottom:1px solid #EAE4DE"><i style="width:11px;height:11px;border-radius:50%;background:#E0D9D2;display:block"></i><i style="width:11px;height:11px;border-radius:50%;background:#E0D9D2;display:block"></i><i style="width:11px;height:11px;border-radius:50%;background:#E0D9D2;display:block"></i><div style="margin-left:16px;height:24px;flex:1;max-width:420px;border-radius:7px;background:#fff;font:500 12px 'JetBrains Mono';color:#615C6E;display:flex;align-items:center;padding:0 10px">validacion.jovenescreativos.co/coordinacion</div></div>
+        <div style="padding:24px 36px 34px;display:grid;gap:24px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:14px"><img src="assets/logo-jc.png" alt="Jóvenes creaTIvos" style="height:56px;width:auto;display:block"><span style="font:600 14px 'Outfit';color:#615C6E">Coordinación · Fundación ROFÉ</span></div>
+            <div style="display:flex;align-items:center;gap:10px"><div style="font:600 14px 'Outfit';color:#615C6E">Actualizado hace 2 min</div><div style="width:38px;height:38px;border-radius:50%;background:#F25C2A;color:#fff;display:flex;align-items:center;justify-content:center;font:800 14px 'Outfit'">MR</div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px">
+            <div style="border-radius:24px;background:#1C1A24;color:#fff;padding:26px 28px;position:relative;overflow:hidden">
+              <div style="position:absolute;right:-70px;top:-70px;width:200px;height:200px;border-radius:50%;border:32px solid #F25C2A"></div>
+              <div style="position:absolute;right:120px;bottom:-30px;width:60px;height:60px;border-radius:50%;background:#FFC93C"></div>
+              <div style="position:relative;font:600 12px 'JetBrains Mono';letter-spacing:.06em;text-transform:uppercase;color:#D9D4E0">Avance total</div>
+              <div style="position:relative;display:flex;align-items:baseline;gap:14px;margin-top:10px"><span style="font:800 68px/1 'Outfit';letter-spacing:-.04em">83%</span><span style="font:600 17px 'Outfit';color:#E8E4EC">582 de 700 validados</span></div>
+              <div style="position:relative;height:12px;border-radius:6px;background:rgba(255,255,255,.14);margin-top:20px;overflow:hidden;display:flex;max-width:520px"><div style="width:83.1%;background:#3DD598"></div><div style="width:3.3%;background:#F2B630"></div></div>
+              <div style="position:relative;display:flex;gap:22px;margin-top:16px;font:600 14px 'Outfit'">
+                <span style="display:flex;align-items:center;gap:7px"><i style="width:9px;height:9px;border-radius:50%;background:#3DD598;display:block"></i>582 validados</span>
+                <span style="display:flex;align-items:center;gap:7px"><i style="width:9px;height:9px;border-radius:50%;background:#F2B630;display:block"></i>23 corregidos</span>
+                <span style="display:flex;align-items:center;gap:7px"><i style="width:9px;height:9px;border-radius:50%;background:#FF7A85;display:block"></i>95 pendientes</span>
+              </div>
+            </div>
+            <div style="border-radius:24px;border:2px solid #F0EBE6;padding:24px;display:flex;flex-direction:column;gap:12px">
+              <div style="font:800 20px 'Outfit';letter-spacing:-.02em">Lista final para certificados</div>
+              <div style="font:500 14.5px/1.5 'Outfit';color:#615C6E">Excel con nombre y correo de los <b style="color:#1C1A24">582 validados</b>. Los 23 corregidos entran cuando su monitor los apruebe.</div>
+              <div style="flex:1"></div>
+              <sc-if value="{{ dlIdle }}" hint-placeholder-val="{{ true }}"><button onClick="{{ download }}" style="height:56px;border-radius:18px;border:0;background:#F25C2A;color:#fff;font:700 17px 'Outfit'">Descargar lista final</button></sc-if>
+              <sc-if value="{{ dlLoading }}"><div style="height:56px;border-radius:18px;background:#F79A78;color:#fff;font:700 17px 'Outfit';display:flex;align-items:center;justify-content:center;gap:12px"><span style="width:20px;height:20px;border-radius:50%;border:3px solid rgba(255,255,255,.4);border-top-color:#fff;animation:spin .8s linear infinite"></span>Generando Excel…</div></sc-if>
+              <sc-if value="{{ dlDone }}">
+                <div style="border-radius:16px;background:#E3F5EC;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px">
+                  <div><div style="font:700 15px 'Outfit';color:#17734F">Descargado ✓</div><div style="font:500 12px 'JetBrains Mono';color:#17734F">certificados_jovenes_creativos.xlsx</div></div>
+                  <button onClick="{{ resetDl }}" style="height:38px;padding:0 14px;border-radius:12px;border:0;background:#fff;color:#17734F;font:700 14px 'Outfit'">Otra vez</button>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:16px;flex-wrap:wrap">
+              <div style="font:800 20px 'Outfit';letter-spacing:-.02em">Por ciudad</div>
+              <div style="display:flex;gap:16px;font:600 13px 'Outfit';color:#615C6E"><span style="display:flex;align-items:center;gap:6px"><i style="width:9px;height:9px;border-radius:50%;background:#1F9D6B;display:block"></i>≥ 85%</span><span style="display:flex;align-items:center;gap:6px"><i style="width:9px;height:9px;border-radius:50%;background:#F2B630;display:block"></i>65–84%</span><span style="display:flex;align-items:center;gap:6px"><i style="width:9px;height:9px;border-radius:50%;background:#D64553;display:block"></i>&lt; 65%</span></div>
+            </div>
+            <div style="display:grid;grid-template-columns:150px minmax(0,1fr) 64px 100px minmax(0,1.1fr);gap:18px;padding:12px 0 8px;border-bottom:1px solid #F0EBE6;font:600 11px 'JetBrains Mono';letter-spacing:.06em;text-transform:uppercase;color:#8A8496"><span>Ciudad</span><span>Avance</span><span>%</span><span>Validados</span><span>Monitores</span></div>
+            <sc-for list="{{ cities }}" as="c" hint-placeholder-count="10">
+              <div style="display:grid;grid-template-columns:150px minmax(0,1fr) 64px 100px minmax(0,1.1fr);gap:18px;align-items:center;padding:11px 0;border-bottom:1px solid #F4F0EC">
+                <div style="font:700 15.5px 'Outfit'">{{ c.name }}</div>
+                <div style="height:14px;border-radius:7px;background:#F2EEEA;overflow:hidden"><div style="height:100%;width:{{ c.pctW }};background:{{ c.color }};border-radius:7px"></div></div>
+                <div style="font:800 16px 'Outfit'">{{ c.pctTxt }}</div>
+                <div style="font:500 14px 'Outfit';color:#615C6E">{{ c.val }} / {{ c.total }}</div>
+                <div style="font:500 14px 'Outfit';color:#3F3A4A">{{ c.monitors }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="3b">
+      <div class="dv-olabel"><a class="dv-oid" href="#3b">3b</a>Móvil · panel general</div>
+      <div style="width:360px;height:760px;border-radius:46px;border:9px solid #1C1A24;background:#fff;overflow:hidden;display:flex;flex-direction:column">
+        <div style="height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font:700 14px 'Outfit'"><span>9:41</span><span style="display:flex;gap:4px;align-items:center"><i style="width:16px;height:10px;border-radius:2px;background:#1C1A24;display:block"></i><i style="width:22px;height:11px;border-radius:3px;border:1.5px solid #1C1A24;display:block"></i></span></div>
+        <div style="padding:2px 18px 0;height:50px;display:flex;align-items:center"><img src="assets/logo-jc.png" alt="Jóvenes creaTIvos" style="height:46px;width:auto;display:block"></div>
+        <div style="padding:12px 14px 0">
+          <div style="border-radius:22px;background:#1C1A24;color:#fff;padding:18px;position:relative;overflow:hidden">
+            <div style="position:absolute;right:-46px;bottom:-60px;width:150px;height:150px;border-radius:50%;border:26px solid #F25C2A"></div>
+            <div style="position:relative;font:600 11px 'JetBrains Mono';letter-spacing:.06em;color:#D9D4E0">AVANCE TOTAL</div>
+            <div style="position:relative;display:flex;align-items:baseline;gap:10px;margin-top:6px"><span style="font:800 46px/1 'Outfit';letter-spacing:-.04em">83%</span><span style="font:600 14px 'Outfit';color:#E8E4EC">582 de 700</span></div>
+            <div style="position:relative;height:8px;border-radius:4px;background:rgba(255,255,255,.14);margin-top:14px;overflow:hidden;display:flex;max-width:230px"><div style="width:83.1%;background:#3DD598"></div><div style="width:3.3%;background:#F2B630"></div></div>
+          </div>
+        </div>
+        <div style="flex:1;overflow:hidden;padding:10px 18px 0">
+          <sc-for list="{{ cities }}" as="c" hint-placeholder-count="8">
+            <div style="padding:7px 0;border-bottom:1px solid #F4F0EC">
+              <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:700 15px 'Outfit'">{{ c.name }}</span><span style="font:800 15px 'Outfit'">{{ c.pctTxt }}</span></div>
+              <div style="height:7px;border-radius:4px;background:#F2EEEA;overflow:hidden;margin:5px 0 3px"><div style="height:100%;width:{{ c.pctW }};background:{{ c.color }}"></div></div>
+              <div style="font:500 12.5px 'Outfit';color:#615C6E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.monitors }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="padding:12px 14px 18px;background:#fff;box-shadow:0 -10px 20px -10px rgba(0,0,0,.08)"><div style="height:58px;border-radius:20px;background:#F25C2A;color:#fff;font:700 17px 'Outfit';display:flex;align-items:center;justify-content:center">Descargar lista final</div></div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="3c">
+      <div class="dv-olabel"><a class="dv-oid" href="#3c">3c</a>Descarga · error</div>
+      <div style="width:360px;height:760px;border-radius:46px;border:9px solid #1C1A24;background:#fff;overflow:hidden;display:flex;flex-direction:column">
+        <div style="height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font:700 14px 'Outfit'"><span>9:41</span><span style="display:flex;gap:4px;align-items:center"><i style="width:16px;height:10px;border-radius:2px;background:#1C1A24;display:block"></i><i style="width:22px;height:11px;border-radius:3px;border:1.5px solid #1C1A24;display:block"></i></span></div>
+        <div style="flex:1;background:rgba(28,26,36,.45);display:flex;align-items:flex-end">
+          <div style="width:100%;background:#fff;border-radius:28px 28px 0 0;padding:22px 20px 26px">
+            <div style="width:40px;height:4px;border-radius:2px;background:#E7E2DD;margin:0 auto 18px"></div>
+            <div style="width:56px;height:56px;border-radius:18px;background:#FCE6E8;color:#C2303D;display:flex;align-items:center;justify-content:center;font:800 26px 'Outfit';margin-bottom:14px">!</div>
+            <div style="font:800 23px/1.15 'Outfit';letter-spacing:-.02em;margin-bottom:6px">No pudimos generar el archivo</div>
+            <div style="font:500 15px/1.5 'Outfit';color:#615C6E;margin-bottom:20px">Revisa tu conexión e intenta otra vez. Los datos no se perdieron.</div>
+            <div style="height:58px;border-radius:20px;background:#F25C2A;color:#fff;font:700 17px 'Outfit';display:flex;align-items:center;justify-content:center">Intentar de nuevo</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="3d">
+      <div class="dv-olabel"><a class="dv-oid" href="#3d">3d</a>Descarga · éxito</div>
+      <div style="width:360px;height:760px;border-radius:46px;border:9px solid #1C1A24;background:#fff;overflow:hidden;display:flex;flex-direction:column">
+        <div style="height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font:700 14px 'Outfit'"><span>9:41</span><span style="display:flex;gap:4px;align-items:center"><i style="width:16px;height:10px;border-radius:2px;background:#1C1A24;display:block"></i><i style="width:22px;height:11px;border-radius:3px;border:1.5px solid #1C1A24;display:block"></i></span></div>
+        <div style="flex:1;background:rgba(28,26,36,.45);display:flex;align-items:flex-end">
+          <div style="width:100%;background:#fff;border-radius:28px 28px 0 0;padding:22px 20px 26px">
+            <div style="width:40px;height:4px;border-radius:2px;background:#E7E2DD;margin:0 auto 18px"></div>
+            <div style="width:56px;height:56px;border-radius:18px;background:#E3F5EC;color:#1F9D6B;display:flex;align-items:center;justify-content:center;font:800 26px 'Outfit';margin-bottom:14px">✓</div>
+            <div style="font:800 23px/1.15 'Outfit';letter-spacing:-.02em;margin-bottom:6px">Lista descargada</div>
+            <div style="font:500 15px/1.5 'Outfit';color:#615C6E;margin-bottom:14px">582 estudiantes con nombre y correo validados.</div>
+            <div style="border-radius:14px;background:#F7F4F1;padding:12px 14px;font:600 12.5px 'JetBrains Mono';margin-bottom:20px">certificados_jovenes_creativos.xlsx</div>
+            <div style="height:58px;border-radius:20px;background:#F5F2EF;font:700 17px 'Outfit';display:flex;align-items:center;justify-content:center">Listo</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;monitorOrden&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Por estado&quot;,&quot;Alfabético&quot;],&quot;default&quot;:&quot;Alfabético&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Monitor&quot;}}">
+const NAMES=['Valentina Gómez Ríos','Santiago Rodríguez Peña','Mariana Martínez Cano','Juan David López Arango','Isabella Hernández Mejía','Samuel García Rojas','Sofía Pérez Salazar','Mateo Sánchez Ospina','Luciana Ramírez Gil','Sebastián Torres Castaño','Daniela Díaz Montoya','Nicolás Moreno Vargas','Gabriela Álvarez Restrepo','Tomás Jiménez Quintero','Salomé Ruiz Cardona','Alejandro Castro Valencia','Camila Romero Henao','Emmanuel Suárez Muñoz','Valeria Vargas Patiño','Jerónimo Ortiz Zapata','Antonella Ríos Londoño','Martín Cárdenas Bedoya','Sara Muñoz Ocampo','Miguel Ángel Rincón Duque','Manuela Pineda Sierra','Julián Mejía Toro','Laura Sofía Acosta Vélez','Andrés Felipe Rubio Lara','María José Correa Niño','David Guerrero Pinzón','Ana Lucía Navarro Rey','Esteban Medina Forero','Paula Andrea Cruz Mora','Kevin Romero Henao','Natalia Beltrán Ávila','Brayan Silva Morales','Juliana Ospina Ríos'];
+const slug=n=>n.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().split(' ');
+const DOMS=['gmail.com','gmail.com','hotmail.com','outlook.com','gmail.com','yahoo.com'];
+const PEND=new Set([33,35,36,8,19,30]);
+const CORR={3:{prevName:'JUAN DAVID LOPEZ ARANGO',prevEmail:'jdlopez@colegiosanjose.edu.co',email:'juandavid.lopez@gmail.com'},12:{prevName:'Gabriela Alvarez Restrepo',prevEmail:'gabi.alvarez@gmail.com',email:'gabi.alvarez@gmail.com'},26:{prevName:'Laura Sofia Acosta',prevEmail:'lauraacosta@gmial.com',email:'laurasofia.acosta@gmail.com'}};
+const DAYS=['10 oct','11 oct','12 oct','13 oct','14 oct','15 oct','16 oct'];
+const HOURS=['8:12 a. m.','9:40 a. m.','11:05 a. m.','2:18 p. m.','4:33 p. m.','6:50 p. m.','7:32 p. m.','9:14 p. m.'];
+function buildRows(){return NAMES.map((n,i)=>{const p=slug(n);const email=p[0]+'.'+p[p.length-2]+(i%4===0?i:'')+'@'+DOMS[i%DOMS.length];const st=PEND.has(i)?'pend':CORR[i]?'corr':'val';const d=DAYS[i%7],h=HOURS[(i*3)%8];const r={id:i,name:n,doc:String(1000000000+((i*7919*131)%99999999)).slice(0,10),email,status:st,fecha:st==='pend'?'—':d+' · '+h,fechaShort:st==='pend'?'Sin validar':d};if(CORR[i]){r.prevName=CORR[i].prevName;r.prevEmail=CORR[i].prevEmail;r.email=CORR[i].email;if(i===12)r.prevName='Gabriela Alvarez Restrepo';}return r;});}
+const TYPOS={'gmial.com':'gmail.com','gmal.com':'gmail.com','gmai.com':'gmail.com','gamil.com':'gmail.com','gmail.co':'gmail.com','gmail.con':'gmail.com','gnail.com':'gmail.com','gmaill.com':'gmail.com','hotmial.com':'hotmail.com','hotmal.com':'hotmail.com','hotmail.co':'hotmail.com','hotmail.con':'hotmail.com','outlok.com':'outlook.com','outlook.co':'outlook.com','yaho.com':'yahoo.com','yahoo.co':'yahoo.com'};
+function checkEmail(e){e=(e||'').trim().toLowerCase();if(!e)return{err:'Escribe tu correo'};if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))return{err:'Revisa el correo: falta algo (ej. nombre@gmail.com)'};const dom=e.split('@')[1];if(/(^|\.)edu(\.[a-z]{2})?$/.test(dom)||/misena|sena\.edu|unal\.|udea\.|colegio|\.gov/.test(dom))return{err:'Usa un correo personal, no institucional'};if(TYPOS[dom])return{suggest:TYPOS[dom]};return{};}
+function checkName(n){n=(n||'').trim();if(!n)return{err:'Escribe tu nombre completo'};if(n.split(/\s+/).length<2)return{err:'Escribe nombre y apellido(s)'};if(n===n.toUpperCase()||n===n.toLowerCase())return{warn:'Escríbelo con mayúscula inicial, ej.: Valentina Gómez Ríos'};return{};}
+const STY={val:{label:'Validado',badgeBg:'#E3F5EC',badgeFg:'#17734F',dot:'#1F9D6B'},corr:{label:'Corregido',badgeBg:'#FFF7DC',badgeFg:'#8A5A00',dot:'#F2B630'},pend:{label:'Pendiente',badgeBg:'#FCE6E8',badgeFg:'#9E2430',dot:'#D64553'}};
+const CITIES=[['Bogotá',120,108,'Laura Méndez, Andrés Pardo, Diana Ruiz'],['Medellín',104,95,'Carlos Restrepo, Natalia Gil'],['Cali',86,66,'Jhon Mosquera, Paola Rivas'],['Barranquilla',72,52,'Karen Pertuz, Luis Charris'],['Cartagena',64,38,'Yuranis Julio, Óscar Barrios'],['Bucaramanga',58,53,'Silvia Rueda, Mauricio Peña'],['Pereira',54,47,'Camilo Osorio, Lina Marulanda'],['Manizales',50,46,'Juliana Arango, Felipe Giraldo'],['Cúcuta',48,41,'Ángela Contreras'],['Pasto',44,36,'Daniel Benavides']];
+const nowStr=()=>{const d=new Date();let h=d.getHours(),m=String(d.getMinutes()).padStart(2,'0');const ap=h>=12?'p. m.':'a. m.';h=h%12||12;return 'Hoy · '+h+':'+m+' '+ap;};
+
+class Component extends DCLogic {
+  state={step:'ingreso',doc:'',docErr:'',name:'',email:'',eName:'',eEmail:'',confirm:false,confirmErr:false,submitted:false,code:['','','','','',''],codeErr:'',codeChecking:false,resendIn:0,loadingText:'',from:'ok',
+    rows:buildRows(),filter:'all',mQ:'',modal:null,toast:'',dl:'idle'};
+  codeRefs=[0,1,2,3,4,5].map(()=>React.createRef());
+  componentWillUnmount(){clearInterval(this.timer);clearTimeout(this.tt);}
+  go(step,extra){this.setState({step,...(extra||{})});}
+  buscar=()=>{const d=this.state.doc.replace(/\D/g,'');if(!d)return this.setState({docErr:'Escribe tu número de documento'});if(d.length<6)return this.setState({docErr:'Revisa el número: parece incompleto'});
+    this.go('cargando',{docErr:'',loadingText:'Buscando tus datos…'});
+    setTimeout(()=>{if(d==='1023456789')this.go('revision',{name:'Valentina Gómez Ríos',email:'vgomez@unal.edu.co'});else if(d==='1099999999')this.go('yaValidado');else this.go('noEncontrado');},900);};
+  save(){this.go('cargando',{loadingText:'Guardando tus datos…'});setTimeout(()=>this.go('exito'),800);}
+  confirmarOk=()=>this.save();
+  irCorregir=()=>this.go('correccion',{eName:this.state.name,eEmail:this.state.email,confirm:false,confirmErr:false,submitted:false});
+  cambiarCorreo=()=>{clearInterval(this.timer);this.irCorregir();};
+  guardar=()=>{const n=checkName(this.state.eName),e=checkEmail(this.state.eEmail);this.setState({submitted:true,confirmErr:!this.state.confirm});if(n.err||e.err||e.suggest||!this.state.confirm)return;
+    this.setState({name:this.state.eName.trim(),email:this.state.eEmail.trim().toLowerCase()},()=>this.save());};
+  goBack=()=>{const s=this.state.step;clearInterval(this.timer);if(s==='revision')this.go('ingreso');else if(s==='correccion')this.go('revision');else this.go('ingreso');};
+  reiniciar=()=>{clearInterval(this.timer);this.go('ingreso',{doc:'',docErr:''});};
+  demo=d=>this.setState({doc:d,step:'ingreso',docErr:''},this.buscar);
+
+  showToast(t){clearTimeout(this.tt);this.setState({toast:t});this.tt=setTimeout(()=>this.setState({toast:''}),2600);}
+  setRow(id,patch){this.setState(s=>({rows:s.rows.map(r=>r.id===id?{...r,...patch}:r)}));}
+  copyPend=()=>{const p=this.state.rows.filter(r=>r.status==='pend');if(!p.length)return this.showToast('No hay pendientes');const txt='Hola. Estos estudiantes todavía no validan sus datos para el certificado:\n'+p.map(r=>'• '+r.name).join('\n')+'\nEntren aquí con su documento: validacion.jovenescreativos.co';try{navigator.clipboard&&navigator.clipboard.writeText(txt);}catch(e){}this.showToast('Lista copiada ('+p.length+'). Pégala en WhatsApp.');};
+  openModal(r,mode){this.setState({modal:{id:r.id,mode,name:r.name,email:r.email}});}
+  saveModal=()=>{const m=this.state.modal;const e=checkEmail(m.email);if(e.err||e.suggest)return this.setState({modal:{...m,tried:true}});this.setRow(m.id,{name:m.name.trim(),email:m.email.trim().toLowerCase(),status:'val',fecha:nowStr(),fechaShort:'Hoy'});this.setState({modal:null});this.showToast(m.mode==='edit'?'Corregido y aprobado ✓':'Validado por ti ✓');};
+
+  renderVals(){
+    const s=this.state,step=s.step;
+    const nameC=checkName(s.eName),emailC=checkEmail(s.eEmail);
+    const emailTyped=s.eEmail.includes('@')&&/\.[a-z]{2,}/i.test(s.eEmail.split('@')[1]||'');
+    const showEmail=s.submitted||emailTyped;
+    const progIdx={revision:1,correccion:2}[step]||0;
+    const st=s.rows;
+    const cnt={val:st.filter(r=>r.status==='val').length,corr:st.filter(r=>r.status==='corr').length,pend:st.filter(r=>r.status==='pend').length};
+    const order={corr:0,pend:1,val:2};
+    const q=s.mQ.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const alpha=this.props.monitorOrden==='Alfabético';
+    let rows=st.filter(r=>(s.filter==='all'||r.status===s.filter)&&(!q||(r.name+' '+r.email+' '+r.doc).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(q)));
+    rows=[...rows].sort((a,b)=>alpha?a.name.localeCompare(b.name):(order[a.status]-order[b.status]||a.name.localeCompare(b.name)));
+    const deco=r=>({...r,...STY[r.status],isCorr:r.status==='corr',isPend:r.status==='pend',onApprove:()=>{this.setRow(r.id,{status:'val',fecha:nowStr(),fechaShort:'Hoy'});this.showToast('Aprobado ✓ '+r.name.split(' ')[0]);},onEdit:()=>this.openModal(r,'edit'),onValidate:()=>this.openModal(r,'validate')});
+    const F=[['all','Todos',st.length,'#1C1A24'],['val','Validado',cnt.val,'#1F9D6B'],['corr','Corregido',cnt.corr,'#F2B630'],['pend','Pendiente',cnt.pend,'#D64553']];
+    const emptyMap={pend:['✓','¡No hay pendientes!','Todo tu grupo ya entró a validar.','#E3F5EC','#1F9D6B'],corr:['✓','Nada por revisar','Aprobaste todas las correcciones.','#E3F5EC','#1F9D6B'],val:['∅','Aún nadie validado','Comparte el enlace con tu grupo.','#F5F2EF','#8A8496'],all:['∅','Sin estudiantes','','#F5F2EF','#8A8496']};
+    const em=q?['∅','No encontramos a nadie','Prueba con el documento o solo un apellido.','#F5F2EF','#8A8496']:emptyMap[s.filter];
+    const md=s.modal,mdE=md?checkEmail(md.email):{};
+    const base=buildRows().map(r=>({...r,...STY[r.status]}));
+    const cities=CITIES.map(([name,total,val,monitors])=>{const p=val/total*100;return{name,total,val,monitors,pctW:p.toFixed(1)+'%',pctTxt:Math.round(p)+'%',color:p>=85?'#1F9D6B':p>=65?'#F2B630':'#D64553',p};}).sort((a,b)=>a.p-b.p);
+    return {
+      isIngreso:step==='ingreso',isCargando:step==='cargando',isRevision:step==='revision',isCorreccion:step==='correccion',isExito:step==='exito',isNoEncontrado:step==='noEncontrado',isYaValidado:step==='yaValidado',
+      canBack:['revision','correccion','noEncontrado'].includes(step),goBack:this.goBack,
+      showProgress:progIdx>0,progress:[1,2].map(k=>({bg:k<=progIdx?'#F25C2A':'#EEE9E4'})),
+      doc:s.doc,onDoc:e=>this.setState({doc:e.target.value,docErr:''}),docKey:e=>{if(e.key==='Enter')this.buscar();},docBorder:s.docErr?'#D64553':s.doc?'#F25C2A':'#E7E2DD',docErr:s.docErr,buscar:this.buscar,loadingText:s.loadingText,
+      name:s.name,email:s.email,firstName:(s.name||'').split(' ')[0],confirmarOk:this.confirmarOk,irCorregir:this.irCorregir,cambiarCorreo:this.cambiarCorreo,
+      eName:s.eName,onEName:e=>this.setState({eName:e.target.value}),eEmail:s.eEmail,onEEmail:e=>this.setState({eEmail:e.target.value}),
+      nameErr:s.submitted?nameC.err:'',nameWarn:nameC.warn||'',nameBorder:s.submitted&&nameC.err?'#D64553':nameC.warn?'#F2B630':'#E7E2DD',
+      emailErr:showEmail?emailC.err:'',emailSuggest:!!emailC.suggest,suggestDomain:emailC.suggest||'',emailBorder:showEmail&&emailC.err?'#D64553':emailC.suggest?'#F2B630':'#E7E2DD',
+      applySuggest:()=>this.setState({eEmail:s.eEmail.split('@')[0]+'@'+emailC.suggest}),
+      toggleConfirm:()=>this.setState({confirm:!s.confirm,confirmErr:false}),checkMark:s.confirm?'✓':'',checkBg:s.confirm?'#F25C2A':'#fff',checkBorder:s.confirm?'#F25C2A':s.confirmErr?'#D64553':'#CFC8C1',confirmBorder:s.confirm?'#F25C2A':s.confirmErr?'#D64553':'#E7E2DD',confirmBg:s.confirm?'#FFF5F0':'#FBF9F7',confirmErr:s.confirmErr,guardar:this.guardar,
+      reiniciar:this.reiniciar,demoFound:()=>this.demo('1023456789'),demoDone:()=>this.demo('1099999999'),demoNone:()=>this.demo('1034887210'),
+      m:{validados:cnt.val,total:st.length,pendientes:cnt.pend,pctVal:(cnt.val/st.length*100).toFixed(1)+'%',pctCorr:(cnt.corr/st.length*100).toFixed(1)+'%'},
+      mFilters:F.map(([k,label,count,dot])=>({label,count,dot,on:()=>this.setState({filter:k}),border:s.filter===k?'#1C1A24':'#F0EBE6',bg:s.filter===k?'#FFFFFF':'#FBF9F7'})),
+      mQ:s.mQ,onMQ:e=>this.setState({mQ:e.target.value}),copyPend:this.copyPend,
+      mRows:rows.map(deco),mEmpty:rows.length===0,mEmptyIcon:em[0],mEmptyTitle:em[1],mEmptyText:em[2],mEmptyBg:em[3],mEmptyFg:em[4],
+      modalOpen:!!md,modalTitle:md&&md.mode==='edit'?'Editar corrección':'Validar por el estudiante',modalSub:md&&md.mode==='edit'?'Ajusta lo que haga falta y aprueba.':'Confirma los datos con el estudiante antes de guardar.',
+      modalName:md?md.name:'',modalEmail:md?md.email:'',onModalName:e=>this.setState({modal:{...md,name:e.target.value}}),onModalEmail:e=>this.setState({modal:{...md,email:e.target.value}}),
+      modalErr:md&&(md.tried||md.email.includes('.'))?mdE.err||'':'',modalEmailBorder:md&&mdE.err&&(md.tried||md.email.includes('.'))?'#D64553':mdE.suggest?'#F2B630':'#E7E2DD',modalSuggest:!!mdE.suggest,modalSuggestDomain:mdE.suggest||'',
+      modalApplySuggest:()=>this.setState({modal:{...md,email:md.email.split('@')[0]+'@'+mdE.suggest}}),closeModal:()=>this.setState({modal:null}),saveModal:this.saveModal,toast:s.toast,
+      mobRows:[...base].sort((a,b)=>order[a.status]-order[b.status]).slice(0,8),mobCorr:base.filter(r=>r.status==='corr').slice(0,2),mobPend:base.filter(r=>r.status==='pend'),
+      cities,dlIdle:s.dl==='idle',dlLoading:s.dl==='loading',dlDone:s.dl==='done',download:()=>{this.setState({dl:'loading'});setTimeout(()=>this.setState({dl:'done'}),1600);},resetDl:()=>this.setState({dl:'idle'})
+    };
+  }
+}
+</script>
+</body>
+</html>

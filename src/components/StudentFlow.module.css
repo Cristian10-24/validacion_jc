@@ -1,0 +1,127 @@
+/* Vista estudiante. Móvil primero (prototipo 360 px); escritorio a dos columnas (prototipo 1280 px). */
+.shell {
+  min-height: 100dvh; display: flex; flex-direction: column;
+  position: relative; overflow: hidden; background: #fff;
+}
+.deco { display: none; }
+
+.header {
+  height: 64px; flex: none; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; position: relative; z-index: 1;
+}
+.logo { height: 46px; width: auto; display: block; }
+.headerRight { display: none; }
+
+.progress { display: flex; align-items: center; gap: 14px; padding: 14px 22px 0; }
+.bars { display: flex; gap: 6px; flex: 1; }
+.bar { flex: 1; height: 5px; border-radius: 3px; background: #eee9e4; }
+.barOn { background: var(--orange); }
+.stepLabel { display: none; font: 600 13px var(--mono); color: var(--muted); }
+
+.main {
+  flex: 1; display: flex; flex-direction: column; padding: 22px 22px 18px;
+  position: relative; z-index: 1;
+}
+.intro { display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 20px; }
+.back {
+  border: 0; background: #f0ebe6; border-radius: 12px; height: 40px; padding: 0 14px;
+  font: 600 15px var(--font); color: var(--ink); margin-bottom: 18px;
+  display: flex; align-items: center; gap: 8px;
+}
+.kicker { margin-bottom: 10px; }
+.title { margin: 0 0 10px; font: 800 30px/1.08 var(--font); letter-spacing: -.03em; text-wrap: balance; }
+.sub { margin: 0; font: 500 16px/1.5 var(--font); color: var(--muted); text-wrap: pretty; }
+
+.card { flex: 1; display: flex; flex-direction: column; }
+.form { flex: 1; display: flex; flex-direction: column; }
+.grow { flex: 1; min-height: 16px; }
+.hint { margin-top: 14px; font: 500 14px/1.45 var(--font); color: var(--muted); text-align: center; }
+
+.loading { min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; font: 700 18px var(--font); }
+
+/* Tarjeta "así aparecerá en tu certificado" */
+.cert { border-radius: 22px; background: var(--orange-soft); padding: 22px 20px 20px; position: relative; overflow: hidden; }
+.certRing { position: absolute; right: -34px; top: -34px; width: 110px; height: 110px; border-radius: 50%; border: 18px solid var(--orange); opacity: .9; }
+.certLabel { position: relative; font: 600 14px var(--font); color: #7a3a20; margin-bottom: 12px; }
+.certName { position: relative; font: 800 27px/1.1 var(--font); letter-spacing: -.02em; padding-right: 40px; text-wrap: balance; }
+.certEmail { position: relative; margin-top: 14px; padding-top: 14px; border-top: 1.5px dashed #f5b79e; font: 600 16px var(--font); word-break: break-all; }
+
+.stack { display: grid; gap: 10px; margin-top: 14px; }
+.actions { display: grid; gap: 10px; margin-top: 18px; }
+
+.suggest {
+  margin-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 12px 10px 14px; border-radius: 14px; background: var(--yellow-soft);
+  font: 600 14.5px var(--font); color: var(--yellow-ink);
+}
+.suggest button { flex: none; height: 38px; padding: 0 16px; border-radius: 12px; border: 0; background: var(--ink); color: #fff; font: 700 14px var(--font); }
+
+.field + .field { margin-top: 16px; }
+.docInput { height: 62px; border-radius: 18px; font: 700 21px var(--font); letter-spacing: .04em; padding: 0 18px; }
+
+/* Éxito */
+.burst { position: relative; height: 200px; }
+.burstRing { position: absolute; left: 50%; top: 50%; width: 170px; height: 170px; margin: -85px 0 0 -85px; border-radius: 50%; border: 22px solid var(--orange-ring); }
+.burstCheck { position: absolute; left: 50%; top: 50%; width: 100px; height: 100px; margin: -50px 0 0 -50px; border-radius: 50%; background: var(--green); display: flex; align-items: center; justify-content: center; color: #fff; }
+.dot { position: absolute; display: block; }
+.summary { margin-top: 12px; border-radius: 18px; background: var(--surface-2); padding: 16px 18px; display: grid; gap: 4px; }
+.summaryLabel { font: 600 12px var(--mono); letter-spacing: .06em; color: var(--muted-2); }
+.summaryName { font: 800 19px var(--font); }
+.summaryEmail { font: 500 15.5px var(--font); color: var(--muted); word-break: break-all; }
+.summaryDate { font: 600 14px var(--font); color: var(--green-dark); margin-top: 6px; }
+
+.iconBox { width: 64px; height: 64px; border-radius: 22px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+.iconRed { background: var(--red-soft); color: var(--red-ink); }
+.iconGreen { background: var(--green-soft); color: var(--green); }
+.docShown { border-radius: 16px; background: var(--surface-2); padding: 16px 18px; font: 700 22px var(--font); letter-spacing: .04em; }
+.smallLabel { font: 600 14px var(--font); color: var(--muted); margin-bottom: 8px; }
+
+.footer { padding: 4px 22px 18px; text-align: center; font: 500 13px var(--font); color: var(--muted); position: relative; z-index: 1; }
+.footer a { color: var(--muted); }
+
+/* Revisión en celular: solo "Hola, {nombre}" como en el prototipo móvil. */
+@media (max-width: 959px) {
+  .introCompact { margin-bottom: 16px; }
+  .introCompact .back, .introCompact .kicker, .introCompact .sub { display: none; }
+  .introCompact .progress { padding: 0 0 18px; width: 100%; }
+  .introCompact .title { font-size: 26px; margin: 0; }
+}
+
+/* ---------- Escritorio ---------- */
+@media (min-width: 960px) {
+  .shell { background: var(--bg); }
+  .deco { display: block; position: absolute; pointer-events: none; }
+  .decoRing { left: -110px; bottom: -150px; width: 360px; height: 360px; border-radius: 50%; border: 60px solid var(--orange-ring); }
+  .decoSun { left: 300px; bottom: 70px; width: 22px; height: 22px; border-radius: 50%; background: var(--sun); }
+  .decoSquare { left: 120px; top: 250px; width: 16px; height: 16px; background: var(--blue); border-radius: 4px; transform: rotate(20deg); }
+  .decoBlob { right: -60px; top: 70px; width: 180px; height: 180px; border-radius: 50%; background: var(--orange-soft); }
+
+  .header { height: 96px; padding: 0 56px; }
+  .logo { height: 58px; }
+  .headerRight { display: flex; align-items: center; gap: 20px; font: 600 14px var(--font); color: var(--muted); }
+  .divider { width: 1px; height: 18px; background: #e0d9d2; }
+
+  .main {
+    display: grid; grid-template-columns: minmax(0, 1fr) 500px; gap: 80px; align-items: center;
+    padding: 24px 96px 56px; max-width: 1280px; width: 100%; margin: 0 auto;
+  }
+  .intro { margin: 0; }
+  .progress { padding: 0; margin-bottom: 22px; }
+  .bars { flex: none; width: 160px; }
+  .bar { height: 6px; }
+  .stepLabel { display: inline; }
+  .back { margin-bottom: 28px; padding: 0 16px; }
+  .kicker { font-size: 13px; margin-bottom: 14px; }
+  .title { font-size: 52px; line-height: 1.04; letter-spacing: -.035em; margin-bottom: 16px; max-width: 560px; }
+  .sub { font-size: 19px; max-width: 470px; }
+
+  .card {
+    flex: none; background: #fff; border-radius: 28px; padding: 32px;
+    box-shadow: 0 30px 60px -30px rgba(120, 40, 10, .28); border: 1px solid var(--line-2);
+  }
+  .grow { flex: none; min-height: 0; }
+  .certName { font-size: 32px; }
+  .actionsRow { grid-template-columns: 1fr 1fr; }
+  .btnRow { height: 60px; font-size: 17px; }
+  .footer { text-align: left; padding: 0 56px 20px; }
+}

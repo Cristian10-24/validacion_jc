@@ -1,0 +1,33 @@
+{
+  "name": "validacion-jc",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "vitest run",
+    "import": "tsx --env-file=.env.local scripts/import.ts",
+    "export": "tsx --env-file=.env.local scripts/export.ts",
+    "cities:fix": "tsx --env-file=.env.local scripts/cities.ts",
+    "monitor:add": "tsx --env-file=.env.local scripts/monitor.ts add",
+    "monitor:list": "tsx --env-file=.env.local scripts/monitor.ts list"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "mongodb": "^7.7.0",
+    "next": "^16.4.3",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "exceljs": "^4.4.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9",
+    "vitest": "^5.0.5"
+  }
+}

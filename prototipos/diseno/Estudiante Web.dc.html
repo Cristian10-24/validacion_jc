@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet"><style>@keyframes spin{to{transform:rotate(360deg)}}</style></helmet>
+<div style="width:1280px;height:800px;border-radius:16px;background:#FBF8F5;overflow:hidden;display:flex;flex-direction:column;border:1px solid #E4DDD6;box-shadow:0 24px 60px -24px rgba(120,40,10,.3);position:relative;font-family:'Outfit',sans-serif;color:#1C1A24">
+  <div style="height:40px;flex:none;background:#F5F2EF;display:flex;align-items:center;gap:8px;padding:0 16px;border-bottom:1px solid #EAE4DE;position:relative;z-index:2"><i style="width:11px;height:11px;border-radius:50%;background:#E0D9D2;display:block"></i><i style="width:11px;height:11px;border-radius:50%;background:#E0D9D2;display:block"></i><i style="width:11px;height:11px;border-radius:50%;background:#E0D9D2;display:block"></i><div style="margin-left:16px;height:24px;flex:1;max-width:420px;border-radius:7px;background:#fff;font:500 12px 'JetBrains Mono',monospace;color:#615C6E;display:flex;align-items:center;padding:0 10px">validacion.jovenescreativos.co</div></div>
+  <div style="position:absolute;left:-110px;bottom:-150px;width:360px;height:360px;border-radius:50%;border:60px solid #FFE1D3"></div>
+  <div style="position:absolute;left:300px;bottom:70px;width:22px;height:22px;border-radius:50%;background:#FFC93C"></div>
+  <div style="position:absolute;left:120px;top:250px;width:16px;height:16px;background:#3E8FD0;border-radius:4px;transform:rotate(20deg)"></div>
+  <div style="position:absolute;right:-60px;top:70px;width:180px;height:180px;border-radius:50%;background:#FFF1EA"></div>
+  <div style="height:84px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 56px;position:relative">
+    <img src="assets/logo-jc.png" alt="Jóvenes creaTIvos" style="height:58px;width:auto;display:block">
+    <div style="display:flex;align-items:center;gap:20px;font:600 14px 'Outfit';color:#615C6E"><span>Fundación ROFÉ</span><span style="width:1px;height:18px;background:#E0D9D2"></span><span>¿Problemas? Escríbele a tu monitor</span></div>
+  </div>
+  <div style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 500px;gap:80px;align-items:center;padding:0 96px 56px;position:relative">
+    <div style="display:flex;flex-direction:column;align-items:flex-start">
+      <sc-if value="{{ canBack }}"><button onClick="{{ goBack }}" style="border:0;background:#F0EBE6;border-radius:12px;height:40px;padding:0 16px;font:600 15px 'Outfit';color:#1C1A24;margin-bottom:28px;cursor:pointer;display:flex;align-items:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>Atrás</button></sc-if>
+      <sc-if value="{{ showProgress }}">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:22px">
+          <div style="display:flex;gap:6px;width:160px"><sc-for list="{{ progress }}" as="p"><div style="flex:1;height:6px;border-radius:3px;background:{{ p.bg }}"></div></sc-for></div>
+          <span style="font:600 13px 'JetBrains Mono',monospace;color:#615C6E">{{ stepLabel }}</span>
+        </div>
+      </sc-if>
+      <div style="font:600 13px 'JetBrains Mono',monospace;color:{{ kickerColor }};letter-spacing:.06em;text-transform:uppercase;margin-bottom:14px">{{ kicker }}</div>
+      <h1 style="margin:0 0 16px;font:800 52px/1.04 'Outfit';letter-spacing:-.035em;text-wrap:balance;max-width:560px">{{ title }}</h1>
+      <p style="margin:0;font:500 19px/1.5 'Outfit';color:#615C6E;max-width:470px;text-wrap:pretty">{{ sub }}</p>
+    </div>
+
+    <div style="background:#fff;border-radius:28px;padding:32px;box-shadow:0 30px 60px -30px rgba(120,40,10,.28);border:1px solid #F0EBE6;display:flex;flex-direction:column">
+      <sc-if value="{{ isIngreso }}" hint-placeholder-val="{{ true }}">
+        <label style="font:700 16px 'Outfit';margin-bottom:10px;display:block">Número de documento</label>
+        <input value="{{ doc }}" onChange="{{ onDoc }}" onKeyDown="{{ docKey }}" inputMode="numeric" placeholder="Sin puntos ni espacios" style="height:64px;border:2px solid {{ docBorder }};border-radius:18px;padding:0 20px;font:700 22px 'Outfit';letter-spacing:.04em;color:#1C1A24;width:100%;box-sizing:border-box;background:#fff;outline:none">
+        <sc-if value="{{ docErr }}"><div style="margin-top:8px;font:600 15px 'Outfit';color:#C2303D">{{ docErr }}</div></sc-if>
+        <button onClick="{{ buscar }}" style="margin-top:22px;height:60px;border-radius:20px;background:#F25C2A;color:#fff;font:700 18px 'Outfit';border:0;width:100%;cursor:pointer">Buscar mis datos</button>
+        <div style="margin-top:16px;font:500 14px/1.45 'Outfit';color:#615C6E;text-align:center">Es el mismo documento con el que te inscribiste.</div>
+      </sc-if>
+
+      <sc-if value="{{ isCargando }}">
+        <div style="height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px">
+          <div style="width:52px;height:52px;border-radius:50%;border:5px solid #FFE6DC;border-top-color:#F25C2A;animation:spin .8s linear infinite"></div>
+          <div style="font:700 18px 'Outfit'">{{ loadingText }}</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isRevision }}">
+        <div style="font:600 15px 'Outfit';color:#7A3A20;margin-bottom:12px">Así aparecerá en tu certificado:</div>
+        <div style="border-radius:22px;background:#FFF1EA;padding:26px 24px 22px;position:relative;overflow:hidden">
+          <div style="position:absolute;right:-36px;top:-36px;width:120px;height:120px;border-radius:50%;border:20px solid #F25C2A;opacity:.9"></div>
+          <div style="position:relative;font:800 32px/1.1 'Outfit';letter-spacing:-.02em;text-wrap:balance;padding-right:50px">{{ name }}</div>
+          <div style="position:relative;margin-top:16px;padding-top:16px;border-top:1.5px dashed #F5B79E;font:600 17px 'Outfit';word-break:break-all">{{ email }}</div>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:12px;padding:14px 16px;border-radius:16px;background:#FFF7DC;font:500 14.5px/1.45 'Outfit';color:#5A4300"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9.5"></circle><path d="M12 7.5v5.5"></path><path d="M12 16.5v.5"></path></svg><span>Revisa tildes, mayúsculas y que sea un correo personal que seguirás usando (no del colegio ni universidad).</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:22px">
+          <button onClick="{{ confirmarOk }}" style="height:60px;border-radius:20px;background:#1F9D6B;color:#fff;font:700 17px 'Outfit';border:0;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"></circle><path d="M7.8 12.4l2.8 2.8 5.6-6"></path></svg>Mis datos están bien</button>
+          <button onClick="{{ irCorregir }}" style="height:60px;border-radius:20px;background:#fff;color:#1C1A24;font:700 17px 'Outfit';border:2px solid #E7E2DD;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"></path><path d="M13.5 6.5l4 4"></path></svg>Corregir</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isCorreccion }}">
+        <label style="font:700 15px 'Outfit';margin-bottom:8px;display:block">Nombre completo</label>
+        <input value="{{ eName }}" onChange="{{ onEName }}" style="height:56px;border:2px solid {{ nameBorder }};border-radius:16px;padding:0 16px;font:600 18px 'Outfit';color:#1C1A24;width:100%;box-sizing:border-box;outline:none">
+        <sc-if value="{{ nameErr }}"><div style="margin-top:6px;font:600 14px/1.4 'Outfit';color:#C2303D">{{ nameErr }}</div></sc-if>
+        <sc-if value="{{ nameWarn }}"><div style="margin-top:6px;font:600 14px/1.4 'Outfit';color:#8A5A00">{{ nameWarn }}</div></sc-if>
+        <label style="font:700 15px 'Outfit';margin:18px 0 8px;display:block">Correo personal</label>
+        <input value="{{ eEmail }}" onChange="{{ onEEmail }}" style="height:56px;border:2px solid {{ emailBorder }};border-radius:16px;padding:0 16px;font:600 18px 'Outfit';color:#1C1A24;width:100%;box-sizing:border-box;outline:none">
+        <sc-if value="{{ emailErr }}"><div style="margin-top:6px;font:600 14px/1.4 'Outfit';color:#C2303D">{{ emailErr }}</div></sc-if>
+        <sc-if value="{{ emailSuggest }}">
+          <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px 10px 14px;border-radius:14px;background:#FFF7DC">
+            <span style="font:600 15px 'Outfit';color:#5A4300">¿Quisiste decir <b>{{ suggestDomain }}</b>?</span>
+            <button onClick="{{ applySuggest }}" style="flex:none;height:40px;padding:0 18px;border-radius:12px;border:0;background:#1C1A24;color:#fff;font:700 14px 'Outfit';cursor:pointer">Usar</button>
+          </div>
+        </sc-if>
+        <button onClick="{{ toggleConfirm }}" style="margin-top:20px;display:flex;gap:12px;align-items:center;text-align:left;border:2px solid {{ confirmBorder }};background:{{ confirmBg }};border-radius:16px;padding:14px 16px;cursor:pointer;font-family:'Outfit'">
+          <span style="flex:none;width:26px;height:26px;border-radius:8px;border:2px solid {{ checkBorder }};background:{{ checkBg }};color:#fff;display:flex;align-items:center;justify-content:center;font:800 15px 'Outfit';box-sizing:border-box">{{ checkMark }}</span>
+          <span style="font:600 15px/1.4 'Outfit';color:#1C1A24">Confirmo que este es mi correo personal y lo seguiré usando</span>
+        </button>
+        <sc-if value="{{ confirmErr }}"><div style="margin-top:6px;font:600 14px 'Outfit';color:#C2303D">Marca la casilla para continuar</div></sc-if>
+        <button onClick="{{ guardar }}" style="margin-top:22px;height:60px;border-radius:20px;background:#F25C2A;color:#fff;font:700 18px 'Outfit';border:0;cursor:pointer">Guardar mis datos</button>
+      </sc-if>
+
+      <sc-if value="{{ isExito }}">
+        <div style="position:relative;height:210px">
+          <div style="position:absolute;left:50%;top:50%;width:180px;height:180px;margin:-90px 0 0 -90px;border-radius:50%;border:24px solid #FFE1D3;box-sizing:border-box"></div>
+          <div style="position:absolute;left:50%;top:50%;width:108px;height:108px;margin:-54px 0 0 -54px;border-radius:50%;background:#1F9D6B;display:flex;align-items:center;justify-content:center;color:#fff"><svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 12.5l4.2 4.2 8.8-9.2"></path></svg></div>
+          <div style="position:absolute;left:62px;top:26px;width:22px;height:22px;border-radius:50%;background:#FFC93C"></div>
+          <div style="position:absolute;right:70px;top:16px;width:16px;height:16px;background:#3E8FD0;transform:rotate(20deg);border-radius:4px"></div>
+          <div style="position:absolute;right:56px;bottom:46px;width:26px;height:26px;border-radius:50%;border:5px solid #F25C2A;box-sizing:border-box"></div>
+          <div style="position:absolute;left:72px;bottom:28px;width:14px;height:14px;background:#E2407A;transform:rotate(45deg);border-radius:3px"></div>
+          <div style="position:absolute;left:36px;top:110px;width:10px;height:10px;border-radius:50%;background:#7BC043"></div>
+        </div>
+        <div style="margin-top:12px;border-radius:18px;background:#F7F4F1;padding:16px 18px;display:grid;gap:4px">
+          <div style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#8A8496">EN TU CERTIFICADO</div>
+          <div style="font:800 19px 'Outfit'">{{ name }}</div>
+          <div style="font:500 15.5px 'Outfit';color:#615C6E;word-break:break-all">{{ email }}</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isNoEncontrado }}">
+        <div style="width:64px;height:64px;border-radius:22px;background:#FCE6E8;color:#C2303D;display:flex;align-items:center;justify-content:center;margin-bottom:20px"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4.2-4.2"></path></svg></div>
+        <div style="font:600 14px 'Outfit';color:#615C6E;margin-bottom:8px">Número que escribiste</div>
+        <div style="border-radius:16px;background:#F7F4F1;padding:16px 18px;font:700 22px 'Outfit';letter-spacing:.04em">{{ doc }}</div>
+        <button onClick="{{ reiniciar }}" style="margin-top:22px;height:60px;border-radius:20px;background:#F25C2A;color:#fff;font:700 18px 'Outfit';border:0;cursor:pointer">Intentar con otro número</button>
+      </sc-if>
+
+      <sc-if value="{{ isYaValidado }}">
+        <div style="width:64px;height:64px;border-radius:22px;background:#E3F5EC;color:#1F9D6B;display:flex;align-items:center;justify-content:center;margin-bottom:20px"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 12.5l4.2 4.2 8.8-9.2"></path></svg></div>
+        <div style="border-radius:18px;background:#F7F4F1;padding:16px 18px;display:grid;gap:4px">
+          <div style="font:800 19px 'Outfit'">Isabella Hernández Mejía</div>
+          <div style="font:500 15.5px 'Outfit';color:#615C6E">isabella.hernandez@gmail.com</div>
+          <div style="font:600 14px 'Outfit';color:#17734F;margin-top:6px">Validado el 14 oct · 7:32 p. m.</div>
+        </div>
+        <button onClick="{{ reiniciar }}" style="margin-top:22px;height:60px;border-radius:20px;background:#F5F2EF;color:#1C1A24;font:700 18px 'Outfit';border:0;cursor:pointer">Volver al inicio</button>
+      </sc-if>
+    </div>
+  </div>
+  <sc-if value="{{ interactive }}">
+    <div style="position:absolute;right:24px;bottom:16px;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.92);border:1px solid #E7E2DD;border-radius:12px;padding:6px 6px 6px 12px">
+      <span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#615C6E;margin-right:4px">PRUEBA</span>
+      <button onClick="{{ demoFound }}" style="height:28px;padding:0 10px;border-radius:8px;border:1px solid #DDD6CF;background:#fff;font:600 11px 'JetBrains Mono',monospace;cursor:pointer">1023456789 · encontrado</button>
+      <button onClick="{{ demoDone }}" style="height:28px;padding:0 10px;border-radius:8px;border:1px solid #DDD6CF;background:#fff;font:600 11px 'JetBrains Mono',monospace;cursor:pointer">1099999999 · ya validó</button>
+      <button onClick="{{ demoNone }}" style="height:28px;padding:0 10px;border-radius:8px;border:1px solid #DDD6CF;background:#fff;font:600 11px 'JetBrains Mono',monospace;cursor:pointer">otro · no aparece</button>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:800},&quot;start&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ingreso&quot;,&quot;docErr&quot;,&quot;cargando&quot;,&quot;revision&quot;,&quot;correccionEdu&quot;,&quot;correccionTypo&quot;,&quot;exito&quot;,&quot;noEncontrado&quot;,&quot;yaValidado&quot;],&quot;default&quot;:&quot;ingreso&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;interactive&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const TYPOS={'gmial.com':'gmail.com','gmal.com':'gmail.com','gmai.com':'gmail.com','gamil.com':'gmail.com','gmail.co':'gmail.com','gmail.con':'gmail.com','gnail.com':'gmail.com','gmaill.com':'gmail.com','hotmial.com':'hotmail.com','hotmal.com':'hotmail.com','hotmail.co':'hotmail.com','hotmail.con':'hotmail.com','outlok.com':'outlook.com','outlook.co':'outlook.com','yaho.com':'yahoo.com','yahoo.co':'yahoo.com'};
+function checkEmail(e){e=(e||'').trim().toLowerCase();if(!e)return{err:'Escribe tu correo'};if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))return{err:'Revisa el correo: falta algo (ej. nombre@gmail.com)'};const dom=e.split('@')[1];if(/(^|\.)edu(\.[a-z]{2})?$/.test(dom)||/misena|sena\.edu|unal\.|udea\.|colegio|\.gov/.test(dom))return{err:'Usa un correo personal, no institucional'};if(TYPOS[dom])return{suggest:TYPOS[dom]};return{};}
+function checkName(n){n=(n||'').trim();if(!n)return{err:'Escribe tu nombre completo'};if(n.split(/\s+/).length<2)return{err:'Escribe nombre y apellido(s)'};if(n===n.toUpperCase()||n===n.toLowerCase())return{warn:'Escríbelo con mayúscula inicial, ej.: Valentina Gómez Ríos'};return{};}
+const V='Valentina Gómez Ríos';
+function initFor(start){const b={step:'ingreso',doc:'',docErr:'',name:'',email:'',eName:'',eEmail:'',confirm:false,confirmErr:false,submitted:false,loadingText:''};
+  switch(start){
+    case 'docErr':return{...b,doc:'10234',docErr:'Revisa el número: parece incompleto'};
+    case 'cargando':return{...b,step:'cargando',doc:'1023456789',loadingText:'Buscando tus datos…'};
+    case 'revision':return{...b,step:'revision',name:V,email:'vgomez@unal.edu.co'};
+    case 'correccionEdu':return{...b,step:'correccion',name:V,email:'vgomez@unal.edu.co',eName:V,eEmail:'vgomez@unal.edu.co',submitted:true};
+    case 'correccionTypo':return{...b,step:'correccion',name:V,email:'vgomez@unal.edu.co',eName:V,eEmail:'valentina.gomez@gmial.com',confirm:true};
+    case 'exito':return{...b,step:'exito',name:V,email:'valentina.gomez@gmail.com'};
+    case 'noEncontrado':return{...b,step:'noEncontrado',doc:'1034887210'};
+    case 'yaValidado':return{...b,step:'yaValidado',doc:'1099999999'};
+    default:return b;}}
+const COPY={
+  ingreso:['Certificados 2026','Valida tus datos para tu certificado','Te toma menos de un minuto. Solo necesitas tu número de documento.','#C9461B'],
+  revision:['Revisa tus datos','Hola, {n}. ¿Así está bien?','Así como los ves aquí saldrán en tu certificado.','#C9461B'],
+  correccion:['Corrige tus datos','Escríbelos tal como quieres que salgan','Usa tildes y mayúsculas donde van, y un correo personal que seguirás usando.','#C9461B'],
+  exito:['Todo listo','¡Listo! Tus datos quedaron validados','Tu certificado llegará a este correo. Ya puedes cerrar esta página.','#17734F'],
+  noEncontrado:['Algo no cuadra','Tu documento no aparece','Escríbele a tu monitor para que te agregue. Revisa también que el número esté bien escrito.','#C2303D'],
+  yaValidado:['Todo en orden','Ya validaste tus datos','No tienes que hacer nada más. Si necesitas un cambio, escríbele a tu monitor.','#17734F']};
+
+class Component extends DCLogic {
+  state=initFor((this.props||{}).start);
+  componentDidMount(){if(this.props.start)this.setState(initFor(this.props.start));}
+  componentWillUnmount(){clearTimeout(this.t);}
+  go(step,extra){this.setState({step,...(extra||{})});}
+  buscar=()=>{const d=this.state.doc.replace(/\D/g,'');if(!d)return this.setState({docErr:'Escribe tu número de documento'});if(d.length<6)return this.setState({docErr:'Revisa el número: parece incompleto'});
+    this.go('cargando',{docErr:'',loadingText:'Buscando tus datos…'});
+    this.t=setTimeout(()=>{if(d==='1023456789')this.go('revision',{name:V,email:'vgomez@unal.edu.co'});else if(d==='1099999999')this.go('yaValidado');else this.go('noEncontrado');},900);};
+  save(){this.go('cargando',{loadingText:'Guardando tus datos…',prev:this.state.step});this.t=setTimeout(()=>this.go('exito'),800);}
+  irCorregir=()=>this.go('correccion',{eName:this.state.name,eEmail:this.state.email,confirm:false,confirmErr:false,submitted:false});
+  guardar=()=>{const n=checkName(this.state.eName),e=checkEmail(this.state.eEmail);this.setState({submitted:true,confirmErr:!this.state.confirm});if(n.err||e.err||e.suggest||!this.state.confirm)return;
+    this.setState({name:this.state.eName.trim(),email:this.state.eEmail.trim().toLowerCase()},()=>this.save());};
+  goBack=()=>{const s=this.state.step;if(s==='correccion')this.go('revision');else this.go('ingreso');};
+  reiniciar=()=>this.go('ingreso',{doc:'',docErr:''});
+  demo=d=>{clearTimeout(this.t);this.setState({...initFor(),doc:d},this.buscar);};
+  renderVals(){
+    const s=this.state,step=s.step;
+    const nameC=checkName(s.eName),emailC=checkEmail(s.eEmail);
+    const emailTyped=s.eEmail.includes('@')&&/\.[a-z]{2,}/i.test(s.eEmail.split('@')[1]||'');
+    const showEmail=s.submitted||emailTyped;
+    const progIdx={revision:1,correccion:2}[step]||0;
+    const ck=step==='cargando'?(s.prev||'ingreso'):step;
+    const c=COPY[ck]||COPY.ingreso;
+    return {
+      interactive:!!this.props.interactive,
+      kicker:c[0],title:c[1].replace('{n}',(s.name||'').split(' ')[0]),sub:c[2],kickerColor:c[3],
+      isIngreso:step==='ingreso',isCargando:step==='cargando',isRevision:step==='revision',isCorreccion:step==='correccion',isExito:step==='exito',isNoEncontrado:step==='noEncontrado',isYaValidado:step==='yaValidado',
+      canBack:['revision','correccion','noEncontrado'].includes(step),goBack:this.goBack,
+      showProgress:progIdx>0,stepLabel:'Paso '+progIdx+' de 2',progress:[1,2].map(k=>({bg:k<=progIdx?'#F25C2A':'#EEE9E4'})),
+      doc:s.doc,onDoc:e=>this.setState({doc:e.target.value,docErr:''}),docKey:e=>{if(e.key==='Enter')this.buscar();},docBorder:s.docErr?'#D64553':s.doc?'#F25C2A':'#E7E2DD',docErr:s.docErr,buscar:this.buscar,loadingText:s.loadingText,
+      name:s.name,email:s.email,confirmarOk:()=>this.save(),irCorregir:this.irCorregir,
+      eName:s.eName,onEName:e=>this.setState({eName:e.target.value}),eEmail:s.eEmail,onEEmail:e=>this.setState({eEmail:e.target.value}),
+      nameErr:s.submitted?nameC.err:'',nameWarn:nameC.warn||'',nameBorder:s.submitted&&nameC.err?'#D64553':nameC.warn?'#F2B630':'#E7E2DD',
+      emailErr:showEmail?emailC.err:'',emailSuggest:!!emailC.suggest,suggestDomain:emailC.suggest||'',emailBorder:showEmail&&emailC.err?'#D64553':emailC.suggest?'#F2B630':'#E7E2DD',
+      applySuggest:()=>this.setState({eEmail:s.eEmail.split('@')[0]+'@'+emailC.suggest}),
+      toggleConfirm:()=>this.setState({confirm:!s.confirm,confirmErr:false}),checkMark:s.confirm?'✓':'',checkBg:s.confirm?'#F25C2A':'#fff',checkBorder:s.confirm?'#F25C2A':s.confirmErr?'#D64553':'#CFC8C1',confirmBorder:s.confirm?'#F25C2A':s.confirmErr?'#D64553':'#E7E2DD',confirmBg:s.confirm?'#FFF5F0':'#FBF9F7',confirmErr:s.confirmErr,guardar:this.guardar,
+      reiniciar:this.reiniciar,demoFound:()=>this.demo('1023456789'),demoDone:()=>this.demo('1099999999'),demoNone:()=>this.demo('1034887210')
+    };
+  }
+}
+</script>
+</body>
+</html>
