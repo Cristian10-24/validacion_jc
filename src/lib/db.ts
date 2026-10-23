@@ -1,5 +1,5 @@
 import { MongoClient, type Db } from "mongodb";
-import type { ChangeLog, Student, User } from "./types";
+import type { ChangeLog, RateLimit, Student, User } from "./types";
 
 declare global {
   // Se reutiliza entre recargas en desarrollo y entre invocaciones en Vercel.
@@ -38,6 +38,7 @@ export async function collections() {
     students: db.collection<Student>("students"),
     users: db.collection<User>("users"),
     changeLog: db.collection<ChangeLog>("changeLog"),
+    rateLimits: db.collection<RateLimit>("rateLimits"),
   };
 }
 
@@ -48,6 +49,8 @@ async function ensureIndexes(db: Db) {
     db.collection("students").createIndex({ correoNorm: 1 }),
     db.collection("users").createIndex({ usuario: 1 }, { unique: true }),
     db.collection("changeLog").createIndex({ studentId: 1, fecha: -1 }),
+    // TTL: Mongo borra cada contador cuando termina su ventana.
+    db.collection("rateLimits").createIndex({ expiraEn: 1 }, { expireAfterSeconds: 0 }),
   ]);
 }
 

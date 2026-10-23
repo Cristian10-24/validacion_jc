@@ -48,3 +48,5 @@ export type ChangeLog = {
   accion: "confirmar" | "corregir" | "aprobar" | "editar" | "validar_en_nombre" | "importar";
   fecha: Date;
 };
+
+export type RateLimit = { _id: string; count: number; expiraEn: Date };

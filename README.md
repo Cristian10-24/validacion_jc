@@ -40,6 +40,14 @@ Las ciudades de los monitores deben escribirse igual que en el Excel. El script 
 | `APP_URL` | `https://validacion.tocaunavida.org` (enlace del mensaje de WhatsApp) |
 | `STUDENT_PORTAL_ENABLED` | `true` (o `false` para cerrar) |
 | `NEXT_PUBLIC_PRIVACY_URL` | Enlace a la política de privacidad |
+| `RATE_LIMIT_MAX` | Opcional. Intentos fallidos permitidos por IP cada 15 min (por defecto 20) |
+
+## Límite de intentos
+
+La búsqueda por documento y el login aceptan hasta `RATE_LIMIT_MAX` intentos **fallidos** por IP cada 15 minutos
+(documento no encontrado, usuario o clave incorrectos). Las búsquedas exitosas no cuentan, para que un salón entero
+detrás de la misma red pueda validar sin bloquearse. Los contadores se guardan en la colección `rateLimits` y MongoDB
+los borra solo al terminar cada ventana.
 
 ## Cerrar la vista de estudiantes
 

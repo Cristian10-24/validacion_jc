@@ -82,6 +82,10 @@ export default function StudentFlow({ privacyUrl }: { privacyUrl: string }) {
     try {
       const res = await fetch("/api/estudiante/buscar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ documento: d }) });
       if (res.status === 404) return setStep("noEncontrado");
+      if (res.status === 429) {
+        setStep("ingreso");
+        return setDocErr((await res.json().catch(() => ({}))).mensaje ?? "Demasiados intentos. Espera unos minutos.");
+      }
       if (res.status === 403) return window.location.assign("/cerrado");
       if (!res.ok) throw new Error();
       const body = await res.json();

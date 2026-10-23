@@ -18,7 +18,11 @@ export default function LoginForm() {
     try {
       const res = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ usuario, clave }) });
       if (res.ok) return window.location.assign("/monitor");
-      setError(res.status === 401 ? "Usuario o clave incorrectos. Intenta otra vez." : "No pudimos entrar. Intenta otra vez.");
+      setError(
+        res.status === 401 ? "Usuario o clave incorrectos. Intenta otra vez."
+        : res.status === 429 ? "Demasiados intentos. Espera unos minutos e intenta otra vez."
+        : "No pudimos entrar. Intenta otra vez.",
+      );
     } catch {
       setError("No pudimos conectarnos. Revisa tu internet e intenta otra vez.");
     }
