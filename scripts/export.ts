@@ -2,37 +2,22 @@
 // Excel final para certificados: Nombre completo, Correo y Ciudad.
 // Por defecto solo los VALIDADOS (los corregidos entran cuando su monitor los aprueba).
 // --todos: incluye a todos con su dato más reciente (útil para revisar, no para certificar).
-import ExcelJS from "exceljs";
-import { mkdirSync } from "node:fs";
+// Es el mismo archivo que descarga la administración desde la web.
+import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { closeDb, collections, dbHost, dbName } from "@/lib/db";
+import { excelCertificados, filasCertificados, nombreArchivo } from "@/lib/export";
 
 async function main() {
   const args = process.argv.slice(2);
   const todos = args.includes("--todos");
-  const hoy = new Date().toLocaleDateString("sv-SE", { timeZone: "America/Bogota" }); // AAAA-MM-DD
-  const salida = args.find((a) => !a.startsWith("--")) ?? path.join("exports", `certificados_jovenes_creativos_${hoy}${todos ? "_todos" : ""}.xlsx`);
+  const salida = args.find((a) => !a.startsWith("--")) ?? path.join("exports", nombreArchivo(todos ? "_todos" : ""));
   console.log(`Base de datos: ${dbName()} @ ${dbHost()}`);
 
   const { students } = await collections();
-  const docs = await students.find(todos ? {} : { estado: "validado" }).toArray();
-  const filas = docs
-    .map((s) => ({ nombre: s.nombrePropuesto ?? s.nombre, correo: s.correoPropuesto ?? s.correo, ciudad: s.ciudad }))
-    .sort((a, b) => a.ciudad.localeCompare(b.ciudad, "es") || a.nombre.localeCompare(b.nombre, "es"));
-
-  const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet("Certificados");
-  ws.columns = [
-    { header: "Nombre completo", key: "nombre", width: 42 },
-    { header: "Correo", key: "correo", width: 40 },
-    { header: "Ciudad", key: "ciudad", width: 22 },
-  ];
-  ws.getRow(1).font = { bold: true };
-  ws.views = [{ state: "frozen", ySplit: 1 }];
-  ws.addRows(filas);
-
+  const filas = await filasCertificados(students, !todos);
   mkdirSync(path.dirname(path.resolve(salida)), { recursive: true });
-  await wb.xlsx.writeFile(salida);
+  writeFileSync(salida, await excelCertificados(filas));
 
   const porEstado = await students.aggregate<{ _id: string; n: number }>([{ $group: { _id: "$estado", n: { $sum: 1 } } }]).toArray();
   const e = Object.fromEntries(porEstado.map((x) => [x._id, x.n]));

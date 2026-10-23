@@ -24,7 +24,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "credenciales" }, { status: 401 });
   }
 
-  const res = NextResponse.json({ ok: true });
+  // Coordinación entra al resumen; los monitores, a su grupo.
+  const res = NextResponse.json({ ok: true, destino: user.rol === "admin" ? "/admin" : "/monitor" });
   res.cookies.set(SESSION_COOKIE, createToken(user._id.toHexString()), cookieOptions);
   return res;
 }

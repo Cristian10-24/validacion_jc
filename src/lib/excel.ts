@@ -1,5 +1,5 @@
 import ExcelJS from "exceljs";
-import path from "node:path";
+import { Readable } from "node:stream";
 
 /** Convierte cualquier valor de celda de ExcelJS a texto. */
 export function cellText(value: ExcelJS.CellValue): string {
@@ -24,11 +24,12 @@ export function headerKey(value: string): string {
     .trim();
 }
 
-/** Lee la primera hoja de un .xlsx o .csv como filas { encabezado: texto }. */
-export async function readRows(file: string): Promise<Record<string, string>[]> {
+/** Lee la primera hoja de un .xlsx o .csv (en memoria) como filas { encabezado: texto }. */
+export async function readRowsFromBuffer(data: Buffer, nombreArchivo: string): Promise<Record<string, string>[]> {
   const wb = new ExcelJS.Workbook();
-  const sheet =
-    path.extname(file).toLowerCase() === ".csv" ? await wb.csv.readFile(file) : (await wb.xlsx.readFile(file), wb.worksheets[0]);
+  const sheet = nombreArchivo.toLowerCase().endsWith(".csv")
+    ? await wb.csv.read(Readable.from(data))
+    : (await wb.xlsx.load(data as unknown as ArrayBuffer), wb.worksheets[0]);
   if (!sheet) throw new Error("El archivo no tiene hojas");
 
   const headers: string[] = [];

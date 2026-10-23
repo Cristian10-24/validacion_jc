@@ -73,3 +73,22 @@ describe("checkEmail", () => {
     expect(checkEmail("ana@empresa.com.co").suggestion).toBeNull();
   });
 });
+
+describe("leerFilas (importación)", () => {
+  it("normaliza, une nombres y apellidos y detecta errores por fila", async () => {
+    const { leerFilas } = await import("@/lib/importer");
+    const r = leerFilas([
+      { nombres: "JOSÉ", apellidos: "pérez  gómez", email: " Jose@Gmail.com ", id: "1.023.456", ciudad: "bogota d.c" },
+      { nombres: "Ana", apellidos: "Ruiz", email: "ana@misena.edu.co", id: "555", ciudad: "Cali" },
+      { nombres: "Repetido", apellidos: "X", email: "", id: "1023456", ciudad: "Cali" },
+      { nombres: "Sin", apellidos: "Ciudad", email: "a@gmail.com", id: "777", ciudad: "" },
+      { nombres: "Sin", apellidos: "Documento", email: "a@gmail.com", id: "", ciudad: "Cali" },
+    ]);
+    expect(r.filas.map((f) => [f.documento, f.nombre, f.correo, f.ciudad])).toEqual([
+      ["1023456", "José Pérez Gómez", "jose@gmail.com", "Bogotá D.C."],
+      ["555", "Ana Ruiz", "ana@misena.edu.co", "Cali"],
+    ]);
+    expect(r.errores.map((e) => `${e.fila}:${e.mensaje}`)).toEqual(["4:Documento repetido en el archivo", "5:Sin ciudad", "6:Sin número de documento"]);
+    expect(r.avisos.map((a) => a.fila)).toEqual([3]);
+  });
+});

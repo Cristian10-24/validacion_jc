@@ -6,6 +6,7 @@ import type { SessionUser } from "@/lib/auth";
 import type { Estado } from "@/lib/types";
 import { checkEmail, domainOf, emailError } from "@/lib/validation/email";
 import { cleanSpaces, nameWarnings } from "@/lib/validation/name";
+import AppShell from "./AppShell";
 import s from "./MonitorPanel.module.css";
 
 type Filtro = "all" | Estado;
@@ -39,8 +40,42 @@ function fecha(iso: string | null): string {
   return `${dia === hoy ? "Hoy" : dia} · ${hora}`;
 }
 
-function iniciales(nombre: string): string {
-  return nombre.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join("");
+// ----- Historial (solo admin) -----
+type HistItem = { campo: "nombre" | "correo" | "estado"; anterior: string; nuevo: string; actor: { rol: string; usuario?: string }; accion: string; fecha: string };
+const ACCION_TXT: Record<string, string> = {
+  confirmar: "Confirmó sus datos", corregir: "Envió una corrección", aprobar: "Aprobó la corrección",
+  editar: "Corrigió los datos", validar_en_nombre: "Validó por el estudiante", importar: "Actualizado desde la lista",
+};
+const CAMPO_TXT: Record<HistItem["campo"], string> = { nombre: "Nombre", correo: "Correo", estado: "Estado" };
+const actorTxt = (a: HistItem["actor"]) => (a.rol === "estudiante" ? "El estudiante" : `${a.rol === "admin" ? "Coordinación" : "Monitor"} · ${a.usuario ?? ""}`);
+
+/** Junta los cambios de una misma acción (mismo momento y autor) en un solo bloque. */
+function agruparHistorial(items: HistItem[]) {
+  const grupos: { key: string; accion: string; fecha: string; actor: HistItem["actor"]; cambios: HistItem[] }[] = [];
+  for (const it of items) {
+    const key = `${it.fecha}|${it.accion}|${it.actor.rol}|${it.actor.usuario ?? ""}`;
+    const g = grupos.find((x) => x.key === key);
+    if (g) g.cambios.push(it);
+    else grupos.push({ key, accion: it.accion, fecha: it.fecha, actor: it.actor, cambios: [it] });
+  }
+  // Primero nombre y correo, al final el cambio de estado.
+  for (const g of grupos) g.cambios.sort((a, b) => Number(a.campo === "estado") - Number(b.campo === "estado"));
+  return grupos;
+}
+
+export type FiltrosIniciales = { estado: string; ciudad: string; q: string };
+const FILTROS_VALIDOS: Filtro[] = ["all", "validado", "corregido", "pendiente"];
+const REFRESCO_MS = 30_000;
+
+/** Guarda los filtros en la URL (sin recargar) para que sobrevivan a una recarga o se puedan compartir. */
+function filtrosAUrl(filtro: Filtro, ciudad: string, q: string) {
+  const p = new URLSearchParams();
+  if (filtro !== "all") p.set("estado", filtro);
+  if (ciudad) p.set("ciudad", ciudad);
+  if (q.trim()) p.set("q", q.trim());
+  const qs = p.toString();
+  const url = `${window.location.pathname}${qs ? `?${qs}` : ""}`;
+  if (url !== `${window.location.pathname}${window.location.search}`) window.history.replaceState(null, "", url);
 }
 
 /** Resalta en "ahora" lo que cambió respecto a "antes". */
@@ -48,29 +83,54 @@ function Cambio({ antes, ahora }: { antes: string; ahora: string }) {
   return antes === ahora ? <>{ahora}</> : <span className={s.changed}>{ahora}</span>;
 }
 
-export default function MonitorPanel({ user, appUrl }: { user: SessionUser; appUrl: string }) {
+export default function MonitorPanel({ user, appUrl, inicial }: { user: SessionUser; appUrl: string; inicial: FiltrosIniciales }) {
   const [rows, setRows] = useState<MonitorRow[] | null>(null);
   const [loadErr, setLoadErr] = useState(false);
-  const [filtro, setFiltro] = useState<Filtro>("all");
-  const [q, setQ] = useState("");
-  const [ciudad, setCiudad] = useState("");
+  const [filtro, setFiltro] = useState<Filtro>(FILTROS_VALIDOS.includes(inicial.estado as Filtro) ? (inicial.estado as Filtro) : "all");
+  const [q, setQ] = useState(inicial.q);
+  const [ciudad, setCiudad] = useState(inicial.ciudad);
   const [modal, setModal] = useState<Modal | null>(null);
   const [toast, setToast] = useState<{ text: string; ok?: boolean } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [historial, setHistorial] = useState<{ row: MonitorRow; items: HistItem[] | null; error: boolean } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  async function cargar() {
-    setLoadErr(false);
+  /** silencioso = refresco automático: no muestra error si ya hay datos en pantalla. */
+  async function cargar(silencioso = false) {
+    if (!silencioso) setLoadErr(false);
     try {
       const res = await fetch("/api/monitor/estudiantes", { cache: "no-store" });
       if (res.status === 401) return window.location.assign("/login");
       if (!res.ok) throw new Error();
       setRows((await res.json()).rows);
+      setLoadErr(false);
     } catch {
-      setLoadErr(true);
+      if (!silencioso) setLoadErr(true);
     }
   }
-  useEffect(() => { cargar(); }, []);
+
+  // Carga inicial + refresco cada 30 s (solo con la pestaña visible) y al volver a la pestaña.
+  // Se reemplazan las filas en su lugar: filtros, búsqueda y posición de la página se mantienen.
+  useEffect(() => {
+    cargar();
+    const tick = setInterval(() => { if (document.visibilityState === "visible") cargar(true); }, REFRESCO_MS);
+    const onVisible = () => { if (document.visibilityState === "visible") cargar(true); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { clearInterval(tick); document.removeEventListener("visibilitychange", onVisible); };
+  }, []);
+
+  useEffect(() => { filtrosAUrl(filtro, ciudad, q); }, [filtro, ciudad, q]);
+
+  async function verHistorial(row: MonitorRow) {
+    setHistorial({ row, items: null, error: false });
+    try {
+      const res = await fetch(`/api/monitor/estudiantes/${row.id}`, { cache: "no-store" });
+      if (!res.ok) throw new Error();
+      setHistorial({ row, items: (await res.json()).historial, error: false });
+    } catch {
+      setHistorial({ row, items: null, error: true });
+    }
+  }
 
   function showToast(text: string, ok = false) {
     clearTimeout(toastTimer.current);
@@ -78,13 +138,10 @@ export default function MonitorPanel({ user, appUrl }: { user: SessionUser; appU
     toastTimer.current = setTimeout(() => setToast(null), 2800);
   }
 
-  async function salir() {
-    await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
-    window.location.assign("/login");
-  }
-
   // ----- Datos derivados -----
   const ciudades = useMemo(() => [...new Set((rows ?? []).map((r) => r.ciudad))].sort(), [rows]);
+  // Una ciudad en la URL que no es del usuario se ignora.
+  useEffect(() => { if (rows && ciudad && !ciudades.includes(ciudad)) setCiudad(""); }, [rows, ciudad, ciudades]);
   const enCiudad = useMemo(() => (rows ?? []).filter((r) => !ciudad || r.ciudad === ciudad), [rows, ciudad]);
   const cnt = useMemo(() => {
     const c = { validado: 0, corregido: 0, pendiente: 0 };
@@ -100,7 +157,6 @@ export default function MonitorPanel({ user, appUrl }: { user: SessionUser; appU
       .sort((a, b) => ORDEN[a.estado] - ORDEN[b.estado] || a.nombre.localeCompare(b.nombre, "es"));
   }, [enCiudad, filtro, q]);
 
-  const titulo = user.rol === "admin" ? "Coordinación" : user.ciudades.join(" · ");
   const kicker = ciudad || (user.rol === "admin" ? "Todas las ciudades" : user.ciudades.join(" · "));
   const pct = (n: number) => (total ? `${(n / total) * 100}%` : "0%");
 
@@ -175,36 +231,7 @@ export default function MonitorPanel({ user, appUrl }: { user: SessionUser; appU
   const em = q.trim() ? EMPTY.search : EMPTY[filtro];
 
   return (
-    <div className={s.shell}>
-      <aside className={s.side}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo-jc.png" alt="Jóvenes creaTIvos" className={s.logo} />
-        <nav className={s.nav}>
-          <div className={`${s.navItem} ${s.navOn}`}>{user.rol === "admin" ? "Estudiantes" : "Mi grupo"}</div>
-        </nav>
-        <div style={{ flex: 1 }} />
-        <div className={s.sideUser}>
-          <div className={s.avatar}>{iniciales(user.nombre)}</div>
-          <div>
-            <div className={s.sideName}>{user.nombre}</div>
-            <div className={s.sideRole}>{user.rol === "admin" ? "Coordinación" : `Monitor · ${titulo}`}</div>
-          </div>
-        </div>
-      </aside>
-
-      <main className={s.main}>
-        <div className={s.topbar}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-jc.png" alt="Jóvenes creaTIvos" className={`${s.logo} ${s.topLogo}`} />
-          <div className={s.me}>
-            <div className={s.avatar} title={user.nombre}>{iniciales(user.nombre)}</div>
-            <span className={s.meName}>{user.nombre}</span>
-            <button type="button" className={s.logout} onClick={salir}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3" /><path d="M10 17l-5-5 5-5" /><path d="M5 12h11" /></svg>
-              Cerrar sesión
-            </button>
-          </div>
-        </div>
+    <AppShell user={user} active="estudiantes">
 
         <div className={s.head}>
           <div>
@@ -212,7 +239,7 @@ export default function MonitorPanel({ user, appUrl }: { user: SessionUser; appU
             <div className={s.total}>{rows ? `${cnt.validado} de ${total} validados` : "Cargando…"}</div>
             {ciudades.length > 1 && (
               <select className={s.citySelect} value={ciudad} onChange={(e) => setCiudad(e.target.value)} aria-label="Ciudad">
-                <option value="">Todas mis ciudades</option>
+                <option value="">{user.rol === "admin" ? "Todas las ciudades" : "Todas mis ciudades"}</option>
                 {ciudades.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             )}
@@ -248,7 +275,7 @@ export default function MonitorPanel({ user, appUrl }: { user: SessionUser; appU
             <div className={s.empty}>
               <div className={s.emptyTitle}>No pudimos cargar la lista</div>
               <div className={s.emptyText}>Revisa tu conexión.</div>
-              <button type="button" className={`${s.act} ${s.actGhost}`} onClick={cargar} style={{ marginTop: 10 }}>Intentar de nuevo</button>
+              <button type="button" className={`${s.act} ${s.actGhost}`} onClick={() => cargar()} style={{ marginTop: 10 }}>Intentar de nuevo</button>
             </div>
           )}
           {!rows && !loadErr && (
@@ -290,6 +317,9 @@ export default function MonitorPanel({ user, appUrl }: { user: SessionUser; appU
                     {r.estado === "validado" && (
                       <button type="button" className={`${s.act} ${s.actLink}`} onClick={() => abrir(r, "editar")}>Corregir</button>
                     )}
+                    {user.rol === "admin" && (
+                      <button type="button" className={`${s.act} ${s.actLink}`} onClick={() => verHistorial(r)}>Historial</button>
+                    )}
                   </div>
                 </div>
 
@@ -327,7 +357,6 @@ export default function MonitorPanel({ user, appUrl }: { user: SessionUser; appU
             </div>
           )}
         </div>
-      </main>
 
       {modal && (
         <div className={s.overlay} onClick={(e) => e.target === e.currentTarget && !modal.saving && setModal(null)}>
@@ -368,7 +397,44 @@ export default function MonitorPanel({ user, appUrl }: { user: SessionUser; appU
         </div>
       )}
 
+      {historial && (
+        <div className={s.overlay} onClick={(e) => e.target === e.currentTarget && setHistorial(null)}>
+          <div className={s.modal} role="dialog" aria-modal="true" aria-labelledby="hist-title">
+            <div id="hist-title" className={s.modalTitle}>Historial de cambios</div>
+            <div className={s.histWho}>
+              {historial.row.nombrePropuesto ?? historial.row.nombre} · <span className={s.doc}>{historial.row.documento}</span> · {historial.row.ciudad}
+            </div>
+            {historial.error && <div className="msg-error">No pudimos cargar el historial.</div>}
+            {!historial.items && !historial.error && <div className={s.skeleton}><i /><i style={{ width: "70%" }} /><i /></div>}
+            {historial.items?.length === 0 && <div className={s.emptyText} style={{ padding: "18px 0" }}>Sin cambios todavía: el registro está como se importó.</div>}
+            {historial.items && historial.items.length > 0 && (
+              <ol className={s.hist}>
+                {agruparHistorial(historial.items).map((g) => (
+                  <li key={g.key} className={s.histItem}>
+                    <div className={s.histHead}><b>{ACCION_TXT[g.accion] ?? g.accion}</b><span>{fecha(g.fecha)}</span></div>
+                    <div className={s.histActor}>{actorTxt(g.actor)}</div>
+                    {g.cambios.map((c, i) => (
+                      <div key={i} className={s.histChange}>
+                        <span className={s.histField}>{CAMPO_TXT[c.campo]}</span>
+                        {c.campo === "estado" ? (
+                          <>{STY[c.anterior as Estado]?.label ?? c.anterior} → <b>{STY[c.nuevo as Estado]?.label ?? c.nuevo}</b></>
+                        ) : (
+                          <><span className={s.struck}>{c.anterior || "(vacío)"}</span> → <b>{c.nuevo}</b></>
+                        )}
+                      </div>
+                    ))}
+                  </li>
+                ))}
+              </ol>
+            )}
+            <div className={s.modalActions} style={{ gridTemplateColumns: "1fr" }}>
+              <button type="button" className={s.cancel} onClick={() => setHistorial(null)}>Cerrar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {toast && <div className={`${s.toast} ${toast.ok ? s.toastOk : ""}`} role="status">{toast.text}</div>}
-    </div>
+    </AppShell>
   );
 }

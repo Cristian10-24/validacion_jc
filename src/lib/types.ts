@@ -45,7 +45,7 @@ export type ChangeLog = {
   anterior: string;
   nuevo: string;
   actor: Actor;
-  accion: "confirmar" | "corregir" | "aprobar" | "editar" | "validar_en_nombre" | "importar";
+  accion: "confirmar" | "corregir" | "aprobar" | "editar" | "validar_en_nombre" | "importar" | "eliminar";
   fecha: Date;
 };
 

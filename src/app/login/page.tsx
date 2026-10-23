@@ -6,7 +6,8 @@ import s from "./login.module.css";
 export const metadata = { title: "Ingresa · Panel de monitores · Jóvenes creaTIvos" };
 
 export default async function LoginPage() {
-  if (await getCurrentUser()) redirect("/monitor");
+  const user = await getCurrentUser();
+  if (user) redirect(user.rol === "admin" ? "/admin" : "/monitor");
   return (
     <div className={s.shell}>
       <aside className={s.brand}>

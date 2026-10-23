@@ -12,18 +12,26 @@ npm run dev                  # http://localhost:3000
 npm test                     # reglas de nombre y correo
 ```
 
+## Coordinación desde la web (rol admin)
+
+- **`/admin`**: avance total y por ciudad, y botón para descargar el Excel final (Nombre completo, Correo, Ciudad; solo validados).
+- **`/monitor`**: la lista de todos los estudiantes, con el **historial** de cambios de cada uno.
+- **`/admin/importar`**: subir la lista actualizada. Muestra una vista previa (nuevos, con datos cambiados, protegidos, los que ya no están y errores por fila) y solo guarda al confirmar. Nunca modifica a quien ya validó o envió una corrección; los que ya no están solo se eliminan si se marcan.
+
 ## Operación (scripts)
 
 Usan la base de datos configurada en `.env.local`. Para operar sobre producción, pon ahí la cadena de Atlas de producción.
 
 | Comando | Qué hace |
 |---|---|
-| `npm run import -- archivo.xlsx --dry-run` | Simula la importación y muestra errores, avisos y las ciudades detectadas |
-| `npm run import -- archivo.xlsx` | Importa: crea estudiantes nuevos y actualiza los pendientes. Nunca pisa los validados |
-| `npm run monitor:add -- usuario "Nombre" "Ciudad1,Ciudad2"` | Crea un monitor (o le genera una clave nueva) e imprime la clave |
-| `npm run monitor:add -- coordinacion "Nombre" --admin` | Crea una cuenta admin (ve todas las ciudades) |
-| `npm run monitor:list` | Lista los monitores |
+| `npm run import -- archivo.xlsx --dry-run` | Simula la importación (misma lógica que la página "Subir lista") |
+| `npm run import -- archivo.xlsx` | Crea los nuevos y actualiza los pendientes. Nunca toca validados ni corregidos |
+| `npm run import -- archivo.xlsx --eliminar-ausentes` | Además elimina a quienes ya no están en el archivo |
+| `npm run monitor:add -- usuario "Nombre" "Ciudad1,Ciudad2" [--clave=CLAVE]` | Crea un monitor (o actualiza el existente) |
+| `npm run monitor:add -- usuario "Nombre" --admin [--clave=CLAVE]` | Crea una cuenta de coordinación (ve todas las ciudades) |
+| `npm run monitor:list` | Lista los usuarios |
 | `npm run export` | Genera el Excel final en `exports/` |
+| `npm run cities:fix` | Vuelve a normalizar las ciudades guardadas |
 
 Columnas aceptadas en el Excel (primera hoja, primera fila = encabezados; no importan mayúsculas ni tildes):
 `ciudad`, `grupo`, `documento`, `nombre` (o `nombres` + `apellidos`), `correo`, `monitor`.
@@ -52,3 +60,8 @@ los borra solo al terminar cada ventana.
 ## Cerrar la vista de estudiantes
 
 En Vercel, cambia `STUDENT_PORTAL_ENABLED` a `false` y vuelve a desplegar (Deployments → Redeploy). El panel de monitores sigue funcionando.
+
+## Despliegue
+
+Vercel despliega desde el fork `Cristian10-24/validacion_jc`. El remoto `origin` tiene dos direcciones de push
+(la organización y el fork), así que un solo `git push` actualiza ambos y dispara el despliegue.

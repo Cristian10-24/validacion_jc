@@ -17,7 +17,7 @@ export default function LoginForm() {
     setError("");
     try {
       const res = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ usuario, clave }) });
-      if (res.ok) return window.location.assign("/monitor");
+      if (res.ok) return window.location.assign((await res.json().catch(() => ({}))).destino ?? "/monitor");
       setError(
         res.status === 401 ? "Usuario o clave incorrectos. Intenta otra vez."
         : res.status === 429 ? "Demasiados intentos. Espera unos minutos e intenta otra vez."

@@ -15,6 +15,19 @@ const Body = z.discriminatedUnion("accion", [
   z.object({ accion: z.literal("validar_en_nombre"), nombre: z.string().max(150), correo: z.string().max(150), confirmado: z.literal(true) }),
 ]);
 
+/** Historial de cambios de un estudiante (solo admin). */
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "sesion" }, { status: 401 });
+  if (user.rol !== "admin") return NextResponse.json({ error: "solo_admin" }, { status: 403 });
+  const { id } = await params;
+  if (!ObjectId.isValid(id)) return NextResponse.json({ error: "datos_invalidos" }, { status: 400 });
+
+  const { changeLog } = await collections();
+  const items = await changeLog.find({ studentId: new ObjectId(id) }, { projection: { _id: 0, studentId: 0, documento: 0 } }).sort({ fecha: -1 }).limit(200).toArray();
+  return NextResponse.json({ historial: items.map((h) => ({ ...h, fecha: h.fecha.toISOString() })) });
+}
+
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!sameOrigin(req)) return NextResponse.json({ error: "origen" }, { status: 403 });
   const user = await getCurrentUser();

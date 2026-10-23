@@ -1,0 +1,77 @@
+/* Coordinación · panel general (prototipo 3a escritorio / 3b móvil). */
+.top { display: grid; gap: 14px; }
+
+.hero { border-radius: 22px; background: var(--ink); color: #fff; padding: 18px 20px; position: relative; overflow: hidden; }
+/* En celular el anillo va arriba a la derecha, donde no tapa la leyenda. */
+.heroRing { position: absolute; right: -50px; top: -56px; width: 140px; height: 140px; border-radius: 50%; border: 24px solid var(--orange); }
+.heroSun { display: none; }
+.heroKicker { position: relative; font: 600 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: #d9d4e0; }
+.heroNum { position: relative; display: flex; align-items: baseline; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+.heroPct { font: 800 46px/1 var(--font); letter-spacing: -.04em; }
+.heroOf { font: 600 14px var(--font); color: #e8e4ec; }
+.heroBar { position: relative; height: 8px; border-radius: 4px; background: rgba(255, 255, 255, .14); margin-top: 14px; overflow: hidden; display: flex; max-width: 520px; }
+.heroBar i { display: block; }
+.legend { position: relative; display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 14px; font: 600 13.5px var(--font); }
+.legend span { display: flex; align-items: center; gap: 7px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: block; flex: none; }
+
+.final { border-radius: 22px; border: 2px solid var(--line-2); padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+.finalTitle { font: 800 19px var(--font); letter-spacing: -.02em; }
+.finalText { font: 500 14.5px/1.5 var(--font); color: var(--muted); }
+.finalText b { color: var(--ink); }
+.done { border-radius: 16px; background: var(--green-soft); padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.doneTitle { font: 700 15px var(--font); color: var(--green-dark); }
+.doneFile { font: 500 12px var(--mono); color: var(--green-dark); word-break: break-all; }
+.doneBtn { height: 38px; padding: 0 14px; border-radius: 12px; border: 0; background: #fff; color: var(--green-dark); font: 700 14px var(--font); flex: none; }
+.errBox { border-radius: 16px; background: var(--red-soft); padding: 12px 14px; font: 600 14px/1.4 var(--font); color: var(--red-dark); }
+
+.citiesHead { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin: 26px 0 6px; }
+.citiesTitle { font: 800 20px var(--font); letter-spacing: -.02em; }
+.scale { display: flex; gap: 14px; font: 600 12.5px var(--font); color: var(--muted); }
+.scale span { display: flex; align-items: center; gap: 6px; }
+.updated { font: 500 12.5px var(--font); color: var(--muted-2); }
+
+.tHead { display: none; }
+.city { padding: 10px 0; border-bottom: 1px solid #f4f0ec; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; text-decoration: none; color: inherit; }
+.city:hover .cName { color: var(--orange-dark); }
+.cName { font: 700 15px var(--font); }
+.cPct { font: 800 15px var(--font); text-align: right; grid-column: 2; grid-row: 1; }
+.cBar { grid-column: 1 / -1; height: 8px; border-radius: 4px; background: #f2eeea; overflow: hidden; display: flex; }
+.cBar i { display: block; height: 100%; }
+.cNums { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 12px; font: 500 12.5px var(--font); color: var(--muted); }
+.cNums b { color: var(--ink); font-weight: 700; }
+.cMon { grid-column: 1 / -1; font: 500 12.5px var(--font); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.colLabel { display: none; }
+
+.skeleton { display: grid; gap: 14px; padding-top: 18px; animation: shimmer 1.4s ease-in-out infinite; }
+.skeleton i { display: block; height: 14px; border-radius: 7px; background: var(--line-2); }
+
+@media (min-width: 960px) {
+  .top { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 20px; }
+  .hero { border-radius: 24px; padding: 26px 28px; }
+  .heroRing { right: -70px; top: -70px; width: 200px; height: 200px; border-width: 32px; }
+  .heroSun { display: block; position: absolute; right: 120px; bottom: -30px; width: 60px; height: 60px; border-radius: 50%; background: var(--sun); }
+  .heroKicker { font-size: 12px; }
+  .heroNum { gap: 14px; margin-top: 10px; }
+  .heroPct { font-size: 68px; }
+  .heroOf { font-size: 17px; }
+  .heroBar { height: 12px; border-radius: 6px; margin-top: 20px; }
+  .legend { gap: 22px; margin-top: 16px; font-size: 14px; }
+  .final { border-radius: 24px; padding: 24px; gap: 12px; }
+  .finalTitle { font-size: 20px; }
+
+  .tHead, .city { display: grid; grid-template-columns: 160px minmax(0, 1fr) 56px 96px 90px 90px minmax(0, 1.1fr); gap: 16px; align-items: center; }
+  .tHead { padding: 12px 0 8px; border-bottom: 1px solid var(--line-2); font: 600 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted-2); }
+  .city { padding: 11px 0; }
+  .cName { font-size: 15.5px; }
+  .cBar, .cNums, .cMon, .cPct { grid-column: auto; grid-row: auto; }
+  .cBar { height: 14px; border-radius: 7px; order: 2; }
+  .cName { order: 1; }
+  .cPct { order: 3; text-align: left; font-size: 16px; }
+  .cNums { display: contents; }
+  .cNums > span { order: 4; font: 500 14px var(--font); color: var(--muted); }
+  .cNums > span:nth-child(2) { order: 5; }
+  .cNums > span:nth-child(3) { order: 6; }
+  .cMon { order: 7; font-size: 14px; color: var(--ink-2); }
+  .numLabel { display: none; }
+}

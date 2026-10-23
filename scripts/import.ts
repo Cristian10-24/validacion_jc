@@ -1,100 +1,49 @@
-// Uso: npm run import -- archivo.xlsx [--dry-run]
-// Inserta estudiantes nuevos y actualiza los pendientes. Nunca pisa registros validados
-// ni el nombre/correo de los corregidos (solo ciudad, grupo y monitor).
-import { ObjectId } from "mongodb";
-import { closeDb, collections, dbHost, dbName } from "@/lib/db";
-import { checkEmail } from "@/lib/validation/email";
-import { cleanSpaces, normalizeCity, normalizeDocumento, toProperName } from "@/lib/validation/name";
-import { readRows } from "./excel";
+// Uso: npm run import -- archivo.xlsx [--dry-run] [--eliminar-ausentes]
+// Misma lógica que "Subir lista" en la administración (src/lib/importer.ts):
+// crea los nuevos y actualiza los pendientes; NUNCA toca validados ni corregidos.
+// Los que ya no están en el archivo solo se eliminan con --eliminar-ausentes.
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { closeDb, dbHost, dbName } from "@/lib/db";
+import { readRowsFromBuffer } from "@/lib/excel";
+import { aplicar, planificar, type PlanImport } from "@/lib/importer";
 
-// Nombres de columna aceptados (ya normalizados: minúsculas, sin tildes).
-const COLUMNAS = {
-  ciudad: ["ciudad", "municipio"],
-  grupo: ["grupo", "curso", "cohorte"],
-  documento: ["documento", "id", "numero de documento", "no documento", "n documento", "cedula", "identificacion", "doc", "tarjeta de identidad"],
-  nombre: ["nombre", "nombre completo", "nombres y apellidos", "estudiante"],
-  nombres: ["nombres"],
-  apellidos: ["apellidos"],
-  correo: ["correo", "email", "e mail", "correo electronico", "correo personal"],
-  monitor: ["monitor", "monitora", "docente", "tutor"],
-} as const;
-
-function pick(row: Record<string, string>, campo: keyof typeof COLUMNAS): string {
-  for (const key of COLUMNAS[campo]) if (row[key]) return row[key];
-  return "";
+function resumen(plan: PlanImport) {
+  console.log(`Columnas detectadas: ${plan.columnas.join(", ")}`);
+  console.log(`Filas leídas: ${plan.filasLeidas}`);
+  console.table({
+    nuevos: plan.nuevos.length, conDatosCambiados: plan.cambiados.length, sinCambios: plan.sinCambios,
+    protegidos: plan.protegidos.length, yaNoEstanEnLista: plan.ausentes.length, errores: plan.errores.length,
+  });
+  console.log("Estudiantes por ciudad (así deben escribirse al crear monitores):");
+  console.table(Object.fromEntries(Object.entries(plan.ciudades).sort()));
+  for (const c of plan.cambiados) console.log(`  Cambia ${c.documento} ${c.nombre}: ${c.cambios.map((x) => `${x.campo} "${x.antes}" → "${x.despues}"`).join("; ")}`);
+  for (const c of plan.protegidos) console.log(`  Protegido (${c.estado}) ${c.documento} ${c.nombre}: el archivo trae otros datos, no se toca`);
+  for (const a of plan.ausentes) console.log(`  Ya no está en la lista: ${a.documento} ${a.nombre} (${a.ciudad}, ${a.estado})`);
+  if (plan.avisos.length) console.log(`\nAvisos (${plan.avisos.length}):\n  ${plan.avisos.map((a) => `Fila ${a.fila} (${a.documento}): ${a.mensaje}`).join("\n  ")}`);
+  if (plan.errores.length) console.log(`\nErrores, filas no importadas (${plan.errores.length}):\n  ${plan.errores.map((e) => `Fila ${e.fila}${e.documento ? ` (${e.documento})` : ""}: ${e.mensaje}`).join("\n  ")}`);
 }
 
 async function main() {
   const args = process.argv.slice(2);
   const file = args.find((a) => !a.startsWith("--"));
-  const dryRun = args.includes("--dry-run");
   if (!file) {
-    console.error("Uso: npm run import -- archivo.xlsx [--dry-run]");
+    console.error("Uso: npm run import -- archivo.xlsx [--dry-run] [--eliminar-ausentes]");
     process.exit(1);
   }
-
-  const rows = await readRows(file);
+  const rows = await readRowsFromBuffer(readFileSync(file), path.basename(file));
   if (rows.length === 0) throw new Error("No se encontraron filas");
   console.log(`Base de datos: ${dbName()} @ ${dbHost()}`);
-  console.log(`Columnas detectadas: ${Object.keys(rows[0]).join(", ")}`);
 
-  const { students } = await collections();
-  const vistos = new Set<string>();
-  const errores: string[] = [];
-  const avisos: string[] = [];
-  const stats = { nuevos: 0, actualizados: 0, soloUbicacion: 0, sinCambios: 0, omitidosValidados: 0 };
-  const ciudades = new Map<string, number>();
-
-  for (const [i, row] of rows.entries()) {
-    const fila = i + 2;
-    const documento = normalizeDocumento(pick(row, "documento"));
-    const nombreRaw = cleanSpaces(pick(row, "nombre") || `${pick(row, "nombres")} ${pick(row, "apellidos")}`);
-    const correoRaw = pick(row, "correo");
-    const ciudad = normalizeCity(pick(row, "ciudad"));
-
-    if (!documento) { errores.push(`Fila ${fila}: sin documento`); continue; }
-    if (!nombreRaw) { errores.push(`Fila ${fila} (${documento}): sin nombre`); continue; }
-    if (!ciudad) { errores.push(`Fila ${fila} (${documento}): sin ciudad`); continue; }
-    if (vistos.has(documento)) { errores.push(`Fila ${fila}: documento ${documento} repetido en el archivo`); continue; }
-    vistos.add(documento);
-
-    const check = checkEmail(correoRaw);
-    if (correoRaw && !check.valid) avisos.push(`Fila ${fila} (${documento}): correo inválido "${correoRaw}"`);
-    else if (check.educational) avisos.push(`Fila ${fila} (${documento}): correo educativo ${check.email}`);
-    else if (check.suggestion) avisos.push(`Fila ${fila} (${documento}): ¿dominio mal escrito? ${check.email} → ${check.suggestion}`);
-    else if (!correoRaw) avisos.push(`Fila ${fila} (${documento}): sin correo`);
-
-    ciudades.set(ciudad, (ciudades.get(ciudad) ?? 0) + 1);
-    const ubicacion = { ciudad, grupo: cleanSpaces(pick(row, "grupo")), monitorRef: cleanSpaces(pick(row, "monitor")) };
-    const datos = { nombre: toProperName(nombreRaw), correo: check.email, correoNorm: check.email };
-    const now = new Date();
-
-    const existing = await students.findOne({ documento });
-    if (!existing) {
-      stats.nuevos++;
-      if (!dryRun)
-        await students.insertOne({
-          _id: new ObjectId(), documento, ...ubicacion, ...datos,
-          nombreOriginal: nombreRaw, correoOriginal: correoRaw,
-          estado: "pendiente", aceptaCorreoPersonal: false, creadoEn: now, actualizadoEn: now,
-        });
-      continue;
-    }
-    if (existing.estado === "validado") { stats.omitidosValidados++; continue; }
-
-    const set = existing.estado === "corregido" ? ubicacion : { ...ubicacion, ...datos, nombreOriginal: nombreRaw, correoOriginal: correoRaw };
-    const changed = Object.entries(set).some(([k, v]) => existing[k as keyof typeof existing] !== v);
-    if (!changed) { stats.sinCambios++; continue; }
-    existing.estado === "corregido" ? stats.soloUbicacion++ : stats.actualizados++;
-    if (!dryRun) await students.updateOne({ _id: existing._id }, { $set: { ...set, actualizadoEn: now } });
+  if (args.includes("--dry-run")) {
+    console.log("[SIMULACIÓN] No se escribe nada.\n");
+    return resumen(await planificar(rows));
   }
-
-  console.log(`\n${dryRun ? "[SIMULACIÓN] " : ""}Filas leídas: ${rows.length}`);
-  console.table(stats);
-  console.log("Estudiantes por ciudad (así deben escribirse al crear monitores):");
-  console.table(Object.fromEntries([...ciudades].sort()));
-  if (avisos.length) console.log(`\nAvisos (${avisos.length}):\n  ${avisos.join("\n  ")}`);
-  if (errores.length) console.log(`\nErrores, filas no importadas (${errores.length}):\n  ${errores.join("\n  ")}`);
+  const borrarAusentes = args.includes("--eliminar-ausentes");
+  const pre = await planificar(rows);
+  const r = await aplicar(rows, borrarAusentes ? pre.ausentes.map((a) => a.id) : [], { rol: "admin", usuario: "script" });
+  resumen(r.plan);
+  console.log(`\nAplicado: ${r.insertados} nuevos · ${r.actualizados} actualizados · ${r.eliminados} eliminados · ${r.protegidos} protegidos sin tocar`);
 }
 
 main()

@@ -1,20 +1,4 @@
-/* Panel del monitor. Móvil primero (prototipo 2d–2g); escritorio con barra lateral y tabla (prototipo 2c). */
-.shell { min-height: 100dvh; background: #fff; display: flex; }
-.side { display: none; }
-
-.main { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 0 18px 32px; }
-
-.topbar { height: 64px; display: flex; align-items: center; justify-content: space-between; }
-.logo { height: 46px; width: auto; display: block; }
-.me { display: flex; align-items: center; gap: 10px; }
-.avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--sun); display: flex; align-items: center; justify-content: center; font: 800 13px var(--font); flex: none; }
-.meName { display: none; font: 700 14px var(--font); }
-.logout {
-  border: 1.5px solid var(--line); background: #fff; border-radius: 12px; height: 38px; padding: 0 12px;
-  font: 700 14px var(--font); color: var(--ink); display: flex; align-items: center; gap: 7px;
-}
-.logout:hover { border-color: var(--ink); }
-
+/* Panel del monitor. Móvil primero (prototipo 2d–2g); escritorio con tabla (prototipo 2c). El marco está en AppShell. */
 .head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
 .kicker { font: 600 11px var(--mono); color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
 .total { font: 800 27px/1.1 var(--font); letter-spacing: -.03em; margin-top: 4px; }
@@ -113,26 +97,19 @@
 }
 .toastOk { background: var(--green); }
 
+/* Historial */
+.histWho { font: 600 14px var(--font); color: var(--muted); margin: 6px 0 14px; }
+.hist { list-style: none; margin: 0; padding: 0 0 0 14px; border-left: 2px solid var(--line-2); display: grid; gap: 14px; }
+.histItem { position: relative; }
+.histItem::before { content: ""; position: absolute; left: -20px; top: 5px; width: 10px; height: 10px; border-radius: 50%; background: var(--orange); }
+.histHead { display: flex; justify-content: space-between; gap: 10px; font: 600 14.5px var(--font); }
+.histHead span { font: 500 12.5px var(--font); color: var(--muted-2); white-space: nowrap; }
+.histActor { font: 500 12.5px var(--font); color: var(--muted); margin: 2px 0 6px; }
+.histChange { font: 500 13.5px/1.4 var(--font); color: var(--ink-2); word-break: break-word; }
+.histField { display: inline-block; min-width: 58px; font: 600 11px var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--muted-2); }
+
 /* ---------- Escritorio ---------- */
 @media (min-width: 960px) {
-  .side {
-    width: 228px; flex: none; border-right: 1px solid var(--line-2); padding: 18px 16px 20px;
-    display: flex; flex-direction: column; gap: 22px; background: #fcfaf8; position: sticky; top: 0; height: 100dvh;
-  }
-  .side .logo { height: 62px; align-self: flex-start; }
-  .nav { display: grid; gap: 4px; }
-  .navItem { height: 42px; border-radius: 12px; font: 600 15px var(--font); display: flex; align-items: center; padding: 0 12px; color: var(--muted); }
-  .navOn { background: var(--orange-chip); color: var(--orange-darker); font-weight: 700; }
-  .sideUser { display: flex; gap: 10px; align-items: center; }
-  .sideUser .avatar { width: 38px; height: 38px; font-size: 14px; }
-  .sideName { font: 700 14px var(--font); }
-  .sideRole { font: 500 12.5px var(--font); color: var(--muted); }
-
-  /* Encabezado visible también en escritorio: usuario + cerrar sesión arriba a la derecha. */
-  .topbar { height: auto; justify-content: flex-end; margin-bottom: 14px; }
-  .topLogo { display: none; }
-  .meName { display: inline; }
-  .main { padding: 18px 30px 32px; }
   .head { margin-top: 0; }
   .kicker { font-size: 12px; }
   .total { font-size: 32px; margin-top: 6px; }
