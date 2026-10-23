@@ -3,7 +3,7 @@
 > Al aprobarse, este contenido se guarda en `C:\ROFÉ\PAGINAS\validation-jc\PLAN.md` y se implementa paso a paso. Te aviso cuando cada parte esté lista para probar.
 
 ## Contexto
-Hay que validar el nombre completo y el correo personal de unos 700 estudiantes (10 ciudades, 19 monitores) antes de generar los certificados. Es una app temporal, mobile-first, en `certificados.tocaunavida.org`. La prioridad es tener un **MVP desplegado lo antes posible**, con la mínima complejidad.
+Hay que validar el nombre completo y el correo personal de unos 700 estudiantes (9 ciudades, 9 monitores) antes de generar los certificados. Es una app temporal, mobile-first, en `validacion.tocaunavida.org`. La prioridad es tener un **MVP desplegado lo antes posible**, con la mínima complejidad.
 
 **Decisiones cerradas**
 - Los monitores se asignan **por ciudad** (un monitor puede tener varias).
@@ -125,7 +125,7 @@ NEXT_PUBLIC_PRIVACY_URL=     # enlace a la política de privacidad
 ## 7. Despliegue
 - **Atlas M0:** cluster en AWS `us-east-1`, usuario con `readWrite` solo sobre `validacion_jc` y Network Access `0.0.0.0/0` (Vercel no tiene IP fija).
 - **Vercel:** repositorio GitHub nuevo e independiente → importar en Vercel → cargar las variables de entorno → región de funciones `iad1` → cada `git push` a `main` despliega.
-- **Dominio:** Vercel → Domains → `certificados.tocaunavida.org` → en el DNS de `tocaunavida.org`, un CNAME `certificados` → el valor que indique Vercel. El TLS es automático.
+- **Dominio:** Vercel → Domains → `validacion.tocaunavida.org` → en el DNS de `tocaunavida.org`, un CNAME `validacion` → el valor que indique Vercel. El TLS es automático.
 
 ## 8. Orden de trabajo (aviso al terminar cada paso)
 1. **Base + importación por script:** scaffold Next.js, `lib/db`, validaciones con pruebas, `scripts/import.ts`, `scripts/monitor.ts`. *Para probar:* importar `ejemplo.xlsx` en tu Atlas.
@@ -140,4 +140,4 @@ NEXT_PUBLIC_PRIVACY_URL=     # enlace a la política de privacidad
 ## Verificación
 - `npm test`: email (educativos, tipeos, formato), nombre (partículas, espacios, tildes) y `scopeFilter`.
 - Local: `npm run import prototipos/ejemplo.xlsx` → `npm run monitor:add` para dos monitores de ciudades distintas → `npm run dev`. Probar en el celular o con DevTools móvil: documento inexistente, confirmar → verde, corregir → amarillo → aprobar como monitor → verde; que el monitor B no vea ni pueda modificar estudiantes de A (404 también con `curl`); `npm run export` y abrir el .xlsx para revisar las tildes.
-- Producción: el mismo recorrido en `https://certificados.tocaunavida.org`.
+- Producción: el mismo recorrido en `https://validacion.tocaunavida.org`.

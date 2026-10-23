@@ -1,7 +1,7 @@
 # Validación de datos · Jóvenes creaTIvos
 
 App temporal para que los estudiantes confirmen su **nombre** y **correo personal** antes de generar los certificados.
-Next.js (App Router) + MongoDB Atlas, desplegada en Vercel (`certificados.tocaunavida.org`). El plan completo está en [PLAN.md](PLAN.md).
+Next.js (App Router) + MongoDB Atlas, desplegada en Vercel (`validacion.tocaunavida.org`). El plan completo está en [PLAN.md](PLAN.md).
 
 ## Desarrollo local
 
@@ -37,7 +37,7 @@ Las ciudades de los monitores deben escribirse igual que en el Excel. El script 
 | `MONGODB_URI` | Cadena `mongodb+srv://…` de Atlas |
 | `MONGODB_DB` | `validacion_jc` (la app solo usa esta base) |
 | `SESSION_SECRET` | 32+ caracteres aleatorios |
-| `APP_URL` | `https://certificados.tocaunavida.org` (enlace del mensaje de WhatsApp) |
+| `APP_URL` | `https://validacion.tocaunavida.org` (enlace del mensaje de WhatsApp) |
 | `STUDENT_PORTAL_ENABLED` | `true` (o `false` para cerrar) |
 | `NEXT_PUBLIC_PRIVACY_URL` | Enlace a la política de privacidad |
 
