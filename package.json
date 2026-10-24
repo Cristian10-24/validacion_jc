@@ -9,6 +9,7 @@
     "test": "vitest run",
     "import": "tsx --env-file=.env.local scripts/import.ts",
     "export": "tsx --env-file=.env.local scripts/export.ts",
+    "reset-estudiantes": "tsx --env-file=.env.local scripts/reset-estudiantes.ts",
     "cities:fix": "tsx --env-file=.env.local scripts/cities.ts",
     "monitor:add": "tsx --env-file=.env.local scripts/monitor.ts add",
     "monitor:list": "tsx --env-file=.env.local scripts/monitor.ts list"

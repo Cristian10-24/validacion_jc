@@ -46,6 +46,8 @@ Usan la base de datos configurada en `.env.local`. Para operar sobre producción
 | `npm run monitor:list` | Lista los usuarios |
 | `npm run export` | Genera el Excel final en `exports/` |
 | `npm run cities:fix` | Vuelve a normalizar las ciudades guardadas |
+| `npm run reset-estudiantes -- --buscar` | Lista a quienes tocó el rol estudiante (solo lectura) |
+| `npm run reset-estudiantes -- doc1 doc2 [--dry-run]` | Deja esos estudiantes como recién importados y borra su historial (salvo la importación) |
 
 Columnas aceptadas en el Excel (primera hoja, primera fila = encabezados; no importan mayúsculas ni tildes):
 `ciudad`, `grupo`, `documento`, `nombre` (o `nombres` + `apellidos`), `correo`, `monitor`.
