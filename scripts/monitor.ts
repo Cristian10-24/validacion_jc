@@ -1,53 +1,63 @@
 // Uso:
-//   npm run monitor:add -- usuario "Nombre Apellido" "Ciudad1,Ciudad2" [--admin] [--clave=CLAVE]
+//   npm run monitor:add -- usuario "Nombre Apellido" "Ciudad1,Ciudad2" [--rol=monitor] [--clave=CLAVE]
+//   npm run monitor:add -- usuario "Nombre Apellido" --rol=coordinador [--clave=CLAVE]
+//   npm run monitor:add -- usuario "Nombre Apellido" --rol=admin [--clave=CLAVE]
 //   npm run monitor:list
-// Si el usuario ya existe, actualiza nombre/ciudades y la clave (la dada con --clave o una generada).
-// --admin: ve todas las ciudades (coordinación).
-import bcrypt from "bcryptjs";
-import { randomInt } from "node:crypto";
+// --rol: monitor (por defecto, exige ciudades) | coordinador | admin (ven todas las ciudades).
+// --admin se acepta como atajo de --rol=admin.
+// Si el usuario ya existe, actualiza nombre, rol y ciudades, y cambia la clave solo si se da --clave
+// o si se pide --nueva-clave (genera una). Al cambiar la clave se cierran sus sesiones abiertas.
 import { closeDb, collections } from "@/lib/db";
+import { ROLES, type RolUsuario } from "@/lib/permisos";
+import { generarClave, hashClave } from "@/lib/usuarios";
 import { cleanSpaces, normalizeCity } from "@/lib/validation/name";
 
-function generarClave(): string {
-  const chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
-  return Array.from({ length: 10 }, () => chars[randomInt(chars.length)]).join("");
-}
+const USO = 'Uso: npm run monitor:add -- usuario "Nombre" ["Ciudad1,Ciudad2"] [--rol=monitor|coordinador|admin] [--clave=CLAVE] [--nueva-clave]';
 
 async function add(args: string[]) {
-  const isAdmin = args.includes("--admin");
-  const claveArg = args.find((a) => a.startsWith("--clave="))?.slice("--clave=".length);
+  const opt = (k: string) => args.find((a) => a.startsWith(`--${k}=`))?.slice(k.length + 3);
+  const rol = (args.includes("--admin") ? "admin" : opt("rol") ?? "monitor") as RolUsuario;
+  if (!ROLES.includes(rol)) throw new Error(`Rol inválido "${rol}". ${USO}`);
+  const claveArg = opt("clave");
+  if (claveArg !== undefined && claveArg.length < 8) throw new Error("La clave debe tener al menos 8 caracteres");
+
   const [usuarioRaw, nombreRaw, ciudadesRaw = ""] = args.filter((a) => !a.startsWith("--"));
   const nombre = cleanSpaces(nombreRaw ?? "");
-  if (!usuarioRaw || !nombre || (!isAdmin && !ciudadesRaw)) {
-    console.error('Uso: npm run monitor:add -- usuario "Nombre" "Ciudad1,Ciudad2" [--admin] [--clave=CLAVE]');
+  const ciudades = rol === "monitor" ? [...new Set(ciudadesRaw.split(",").map(normalizeCity).filter(Boolean))] : [];
+  if (!usuarioRaw || !nombre || (rol === "monitor" && ciudades.length === 0)) {
+    console.error(USO + (rol === "monitor" ? "\n(Un monitor necesita al menos una ciudad.)" : ""));
     process.exit(1);
   }
   const usuario = usuarioRaw.trim().toLowerCase();
-  const ciudades = [...new Set(ciudadesRaw.split(",").map(normalizeCity).filter(Boolean))];
   const { users, students } = await collections();
 
   for (const c of ciudades) {
-    const n = await students.countDocuments({ ciudad: c });
-    if (n === 0) console.warn(`⚠ No hay estudiantes en la ciudad "${c}". Revisa que esté escrita igual que en el Excel.`);
+    if ((await students.countDocuments({ ciudad: c })) === 0)
+      console.warn(`⚠ No hay estudiantes en la ciudad "${c}". Revisa que esté escrita igual que en el Excel.`);
   }
 
-  if (claveArg !== undefined && claveArg.length < 8) throw new Error("La clave debe tener al menos 8 caracteres");
-  const clave = claveArg ?? generarClave();
+  const existe = await users.findOne({ usuario });
+  const cambiarClave = !existe || claveArg !== undefined || args.includes("--nueva-clave");
+  const clave = cambiarClave ? claveArg ?? generarClave() : null;
+  const now = new Date();
   await users.updateOne(
     { usuario },
     {
-      $set: { nombre, ciudades, rol: isAdmin ? "admin" : "monitor", activo: true, passwordHash: await bcrypt.hash(clave, 12) },
-      $setOnInsert: { creadoEn: new Date() },
+      $set: { nombre, ciudades, rol, activo: true, actualizadoEn: now, ...(clave ? { passwordHash: await hashClave(clave) } : {}) },
+      $setOnInsert: { creadoEn: now },
+      ...(clave ? { $inc: { tokenVersion: existe ? 1 : 0 } } : {}),
     },
     { upsert: true },
   );
-  console.log(`\n${isAdmin ? "Admin" : "Monitor"} listo:\n  Usuario: ${usuario}\n  Clave:   ${clave}\n  Ciudades: ${isAdmin ? "todas (coordinación)" : ciudades.join(", ")}`);
+  console.log(`\n${existe ? "Actualizado" : "Creado"}:\n  Usuario: ${usuario}\n  Rol:     ${rol}`);
+  console.log(`  Ciudades: ${rol === "monitor" ? ciudades.join(", ") : "todas"}`);
+  console.log(clave ? `  Clave:   ${clave}   (guárdala: no se vuelve a mostrar)` : "  Clave:   sin cambios");
 }
 
 async function list() {
   const { users } = await collections();
   const all = await users.find({}, { projection: { passwordHash: 0 } }).sort({ rol: 1, usuario: 1 }).toArray();
-  console.table(all.map((u) => ({ usuario: u.usuario, nombre: u.nombre, rol: u.rol, ciudades: u.ciudades.join(", "), activo: u.activo })));
+  console.table(all.map((u) => ({ usuario: u.usuario, nombre: u.nombre, rol: u.rol, ciudades: u.rol === "monitor" ? u.ciudades.join(", ") : "todas", activo: u.activo })));
 }
 
 const [cmd, ...rest] = process.argv.slice(2);

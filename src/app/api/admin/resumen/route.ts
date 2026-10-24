@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { exigir } from "@/lib/auth";
 import { collections } from "@/lib/db";
 import type { Estado } from "@/lib/types";
 
 export type CiudadResumen = { ciudad: string; total: number; validado: number; corregido: number; pendiente: number; monitores: string[] };
 
 export async function GET() {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "sesion" }, { status: 401 });
-  if (user.rol !== "admin") return NextResponse.json({ error: "solo_admin" }, { status: 403 });
+  const g = await exigir("ver_resumen");
+  if (g.error) return g.error;
 
   const { students, users } = await collections();
   const [grupos, monitores] = await Promise.all([

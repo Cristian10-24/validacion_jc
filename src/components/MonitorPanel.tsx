@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { MonitorRow } from "@/lib/monitor-view";
 import type { SessionUser } from "@/lib/auth";
+import { puede, ROL_TXT, type RolUsuario } from "@/lib/permisos";
 import type { Estado } from "@/lib/types";
 import { checkEmail, domainOf, emailError } from "@/lib/validation/email";
 import { cleanSpaces, nameWarnings } from "@/lib/validation/name";
@@ -40,14 +41,18 @@ function fecha(iso: string | null): string {
   return `${dia === hoy ? "Hoy" : dia} · ${hora}`;
 }
 
-// ----- Historial (solo admin) -----
-type HistItem = { campo: "nombre" | "correo" | "estado"; anterior: string; nuevo: string; actor: { rol: string; usuario?: string }; accion: string; fecha: string };
+// ----- Historial (coordinación y administración) -----
+type HistItem = { campo: "nombre" | "correo" | "estado" | "documento" | "ciudad" | "grupo"; anterior: string; nuevo: string; actor: { rol: string; usuario?: string }; accion: string; fecha: string };
 const ACCION_TXT: Record<string, string> = {
   confirmar: "Confirmó sus datos", corregir: "Envió una corrección", aprobar: "Aprobó la corrección",
   editar: "Corrigió los datos", validar_en_nombre: "Validó por el estudiante", importar: "Actualizado desde la lista",
+  editar_admin: "Editó el registro",
 };
-const CAMPO_TXT: Record<HistItem["campo"], string> = { nombre: "Nombre", correo: "Correo", estado: "Estado" };
-const actorTxt = (a: HistItem["actor"]) => (a.rol === "estudiante" ? "El estudiante" : `${a.rol === "admin" ? "Coordinación" : "Monitor"} · ${a.usuario ?? ""}`);
+const CAMPO_TXT: Record<HistItem["campo"], string> = { nombre: "Nombre", correo: "Correo", estado: "Estado", documento: "Documento", ciudad: "Ciudad", grupo: "Grupo" };
+const actorTxt = (a: HistItem["actor"]) => (a.rol === "estudiante" ? "El estudiante" : `${ROL_TXT[a.rol as RolUsuario] ?? "Monitor"} · ${a.usuario ?? ""}`);
+
+/** Edición completa (solo administración). */
+type EdicionAdmin = { row: MonitorRow; documento: string; nombre: string; correo: string; ciudad: string; grupo: string; estado: Estado; saving: boolean; error: string };
 
 /** Junta los cambios de una misma acción (mismo momento y autor) en un solo bloque. */
 function agruparHistorial(items: HistItem[]) {
@@ -93,6 +98,10 @@ export default function MonitorPanel({ user, appUrl, inicial }: { user: SessionU
   const [toast, setToast] = useState<{ text: string; ok?: boolean } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [historial, setHistorial] = useState<{ row: MonitorRow; items: HistItem[] | null; error: boolean } | null>(null);
+  const [edicion, setEdicion] = useState<EdicionAdmin | null>(null);
+  const verTodas = puede(user.rol, "ver_todas_las_ciudades");
+  const verHist = puede(user.rol, "ver_historial");
+  const editarTodo = puede(user.rol, "editar_todo");
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   /** silencioso = refresco automático: no muestra error si ya hay datos en pantalla. */
@@ -120,6 +129,30 @@ export default function MonitorPanel({ user, appUrl, inicial }: { user: SessionU
   }, []);
 
   useEffect(() => { filtrosAUrl(filtro, ciudad, q); }, [filtro, ciudad, q]);
+
+  function abrirEdicion(row: MonitorRow) {
+    setEdicion({ row, documento: row.documento, nombre: row.nombre, correo: row.correo, ciudad: row.ciudad, grupo: row.grupo ?? "", estado: row.estado, saving: false, error: "" });
+  }
+
+  async function guardarEdicion() {
+    if (!edicion) return;
+    setEdicion({ ...edicion, saving: true, error: "" });
+    const { row, documento, nombre, correo, ciudad, grupo, estado } = edicion;
+    try {
+      const res = await fetch(`/api/admin/estudiantes/${row.id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documento, nombre: cleanSpaces(nombre), correo, ciudad, grupo, estado }),
+      });
+      if (res.status === 401) return window.location.assign("/login");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return setEdicion({ ...edicion, saving: false, error: data.mensaje ?? "No se pudo guardar." });
+      replaceRow(data.row);
+      setEdicion(null);
+      showToast("Registro actualizado ✓", true);
+    } catch {
+      setEdicion({ ...edicion, saving: false, error: "Sin conexión. Intenta otra vez." });
+    }
+  }
 
   async function verHistorial(row: MonitorRow) {
     setHistorial({ row, items: null, error: false });
@@ -157,7 +190,7 @@ export default function MonitorPanel({ user, appUrl, inicial }: { user: SessionU
       .sort((a, b) => ORDEN[a.estado] - ORDEN[b.estado] || a.nombre.localeCompare(b.nombre, "es"));
   }, [enCiudad, filtro, q]);
 
-  const kicker = ciudad || (user.rol === "admin" ? "Todas las ciudades" : user.ciudades.join(" · "));
+  const kicker = ciudad || (verTodas ? "Todas las ciudades" : user.ciudades.join(" · "));
   const pct = (n: number) => (total ? `${(n / total) * 100}%` : "0%");
 
   // ----- Acciones -----
@@ -239,7 +272,7 @@ export default function MonitorPanel({ user, appUrl, inicial }: { user: SessionU
             <div className={s.total}>{rows ? `${cnt.validado} de ${total} validados` : "Cargando…"}</div>
             {ciudades.length > 1 && (
               <select className={s.citySelect} value={ciudad} onChange={(e) => setCiudad(e.target.value)} aria-label="Ciudad">
-                <option value="">{user.rol === "admin" ? "Todas las ciudades" : "Todas mis ciudades"}</option>
+                <option value="">{verTodas ? "Todas las ciudades" : "Todas mis ciudades"}</option>
                 {ciudades.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             )}
@@ -317,7 +350,10 @@ export default function MonitorPanel({ user, appUrl, inicial }: { user: SessionU
                     {r.estado === "validado" && (
                       <button type="button" className={`${s.act} ${s.actLink}`} onClick={() => abrir(r, "editar")}>Corregir</button>
                     )}
-                    {user.rol === "admin" && (
+                    {editarTodo && (
+                      <button type="button" className={`${s.act} ${s.actLink}`} onClick={() => abrirEdicion(r)}>Editar todo</button>
+                    )}
+                    {verHist && (
                       <button type="button" className={`${s.act} ${s.actLink}`} onClick={() => verHistorial(r)}>Historial</button>
                     )}
                   </div>
@@ -392,6 +428,52 @@ export default function MonitorPanel({ user, appUrl, inicial }: { user: SessionU
             <div className={s.modalActions}>
               <button type="button" className={s.cancel} onClick={() => setModal(null)} disabled={modal.saving}>Cancelar</button>
               <button type="button" className={s.save} onClick={guardarModal} disabled={modal.saving}>{modal.saving ? "Guardando…" : "Guardar como validado"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {edicion && (
+        <div className={s.overlay} onClick={(e) => e.target === e.currentTarget && !edicion.saving && setEdicion(null)}>
+          <div className={s.modal} role="dialog" aria-modal="true" aria-labelledby="ed-title">
+            <div id="ed-title" className={s.modalTitle}>Editar registro</div>
+            <div className={s.modalSub}>Cambios de administración: quedan en el historial. El documento no puede repetirse con otro estudiante.</div>
+            <div className={s.modalField}>
+              <label className="label" htmlFor="e-doc">Documento</label>
+              <input id="e-doc" className="input" inputMode="numeric" value={edicion.documento} onChange={(e) => setEdicion({ ...edicion, documento: e.target.value })} />
+            </div>
+            <div className={s.modalField}>
+              <label className="label" htmlFor="e-nombre">Nombre completo</label>
+              <input id="e-nombre" className="input" value={edicion.nombre} onChange={(e) => setEdicion({ ...edicion, nombre: e.target.value })} />
+            </div>
+            <div className={s.modalField}>
+              <label className="label" htmlFor="e-correo">Correo</label>
+              <input id="e-correo" type="email" className="input" value={edicion.correo} onChange={(e) => setEdicion({ ...edicion, correo: e.target.value })} />
+              {edicion.row.correoPropuesto && edicion.estado === "corregido" && <div className="msg-warn">El estudiante propuso {edicion.row.correoPropuesto}; se conserva mientras siga “Corregido”.</div>}
+            </div>
+            <div className={s.editGrid}>
+              <div>
+                <label className="label" htmlFor="e-ciudad">Ciudad</label>
+                <input id="e-ciudad" className="input" list="e-ciudades" value={edicion.ciudad} onChange={(e) => setEdicion({ ...edicion, ciudad: e.target.value })} />
+                <datalist id="e-ciudades">{ciudades.map((c) => <option key={c} value={c} />)}</datalist>
+              </div>
+              <div>
+                <label className="label" htmlFor="e-grupo">Grupo</label>
+                <input id="e-grupo" className="input" value={edicion.grupo} onChange={(e) => setEdicion({ ...edicion, grupo: e.target.value })} />
+              </div>
+            </div>
+            <div className={s.modalField}>
+              <label className="label" htmlFor="e-estado">Estado</label>
+              <select id="e-estado" className={`input ${s.select}`} value={edicion.estado} onChange={(e) => setEdicion({ ...edicion, estado: e.target.value as Estado })}>
+                <option value="pendiente">Pendiente</option>
+                <option value="corregido">Corregido (por revisar)</option>
+                <option value="validado">Validado</option>
+              </select>
+            </div>
+            {edicion.error && <div className="msg-error" style={{ marginTop: 12 }}>{edicion.error}</div>}
+            <div className={s.modalActions}>
+              <button type="button" className={s.cancel} onClick={() => setEdicion(null)} disabled={edicion.saving}>Cancelar</button>
+              <button type="button" className={s.save} onClick={guardarEdicion} disabled={edicion.saving}>{edicion.saving ? "Guardando…" : "Guardar cambios"}</button>
             </div>
           </div>
         </div>

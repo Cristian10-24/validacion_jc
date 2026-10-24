@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { exigir } from "@/lib/auth";
 import { collections } from "@/lib/db";
 import { excelCertificados, filasCertificados, nombreArchivo } from "@/lib/export";
 
 /** Excel final para certificados (solo validados): Nombre completo, Correo, Ciudad. */
 export async function GET() {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "sesion" }, { status: 401 });
-  if (user.rol !== "admin") return NextResponse.json({ error: "solo_admin" }, { status: 403 });
+  const g = await exigir("descargar_excel");
+  if (g.error) return g.error;
 
   const { students } = await collections();
   const filas = await filasCertificados(students, true);

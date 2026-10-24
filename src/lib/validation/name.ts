@@ -60,6 +60,12 @@ export function normalizeCity(value: string): string {
   return CIUDADES_OFICIALES[cityKey(value)] ?? toProperName(value);
 }
 
+/** Si la ciudad ya existe escrita de otra forma (tildes, mayúsculas, puntos), devuelve la existente. */
+export function ciudadExistente(ciudad: string, existentes: string[]): string {
+  const k = cityKey(ciudad);
+  return existentes.find((c) => cityKey(c) === k) ?? ciudad;
+}
+
 /** Documento sin puntos, espacios ni guiones. */
 export function normalizeDocumento(value: string): string {
   return value.replace(/[^0-9a-zA-Z]/g, "").toUpperCase();

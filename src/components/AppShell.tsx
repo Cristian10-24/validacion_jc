@@ -1,14 +1,17 @@
 "use client";
 
 import type { SessionUser } from "@/lib/auth";
+import { puede, ROL_TXT, type Permiso } from "@/lib/permisos";
 import s from "./AppShell.module.css";
 
-export type Seccion = "resumen" | "estudiantes" | "importar";
+export type Seccion = "resumen" | "estudiantes" | "importar" | "usuarios";
 
-const NAV_ADMIN: { key: Seccion; label: string; href: string }[] = [
-  { key: "resumen", label: "Resumen", href: "/admin" },
+// Cada sección aparece solo si el rol tiene el permiso (el servidor lo vuelve a validar).
+const NAV: { key: Seccion; label: string; href: string; permiso?: Permiso }[] = [
+  { key: "resumen", label: "Resumen", href: "/admin", permiso: "ver_resumen" },
   { key: "estudiantes", label: "Estudiantes", href: "/monitor" },
-  { key: "importar", label: "Subir lista", href: "/admin/importar" },
+  { key: "importar", label: "Subir lista", href: "/admin/importar", permiso: "subir_lista" },
+  { key: "usuarios", label: "Usuarios", href: "/admin/usuarios", permiso: "gestionar_usuarios" },
 ];
 
 export function iniciales(nombre: string): string {
@@ -16,7 +19,9 @@ export function iniciales(nombre: string): string {
 }
 
 export default function AppShell({ user, active, children }: { user: SessionUser; active: Seccion; children: React.ReactNode }) {
-  const nav = user.rol === "admin" ? NAV_ADMIN : [{ key: "estudiantes" as Seccion, label: "Mi grupo", href: "/monitor" }];
+  const nav = user.rol === "monitor"
+    ? [{ key: "estudiantes" as Seccion, label: "Mi grupo", href: "/monitor" }]
+    : NAV.filter((n) => !n.permiso || puede(user.rol, n.permiso));
 
   async function salir() {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
@@ -38,7 +43,7 @@ export default function AppShell({ user, active, children }: { user: SessionUser
           <div className={s.avatar}>{iniciales(user.nombre)}</div>
           <div>
             <div className={s.sideName}>{user.nombre}</div>
-            <div className={s.sideRole}>{user.rol === "admin" ? "Coordinación" : `Monitor · ${user.ciudades.join(" · ")}`}</div>
+            <div className={s.sideRole}>{user.rol === "monitor" ? `Monitor · ${user.ciudades.join(" · ")}` : ROL_TXT[user.rol]}</div>
           </div>
         </div>
       </aside>

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
+import { inicioPorRol } from "@/lib/permisos";
 import LoginForm from "./LoginForm";
 import s from "./login.module.css";
 
@@ -7,7 +8,7 @@ export const metadata = { title: "Ingresa · Panel de monitores · Jóvenes crea
 
 export default async function LoginPage() {
   const user = await getCurrentUser();
-  if (user) redirect(user.rol === "admin" ? "/admin" : "/monitor");
+  if (user) redirect(inicioPorRol(user.rol));
   return (
     <div className={s.shell}>
       <aside className={s.brand}>

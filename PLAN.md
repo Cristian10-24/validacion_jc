@@ -6,7 +6,10 @@
 Hay que validar el nombre completo y el correo personal de unos 700 estudiantes (9 ciudades, 9 monitores) antes de generar los certificados. Es una app temporal y mobile-first, publicada en **`https://validacion.tocaunavida.org`**.
 
 **Decisiones cerradas**
-- Los monitores se asignan **por ciudad** (un monitor puede tener varias). La coordinación (rol `admin`) ve todas.
+- Tres roles (`src/lib/permisos.ts`, validados en el servidor):
+  - **monitor**: solo sus ciudades; aprobar, corregir nombre y correo, validar por el estudiante.
+  - **coordinador**: todas las ciudades; lo mismo que un monitor + resumen, historial y Excel final. No sube la lista, no gestiona usuarios, no edita el documento.
+  - **admin**: todo; además subir la lista, gestión de usuarios y edición completa de estudiantes.
 - Partículas del nombre en minúscula (`de, del, la, las, los, y, e`). Nunca se agregan tildes automáticamente.
 - Un correo repetido entre estudiantes **solo avisa** al monitor.
 - El monitor puede **validar por el estudiante** con su declaración ("El estudiante confirmó que es su correo personal").
@@ -47,7 +50,7 @@ tests/                            # vitest
 
 ## 2. Modelo de datos (base `validacion_jc`)
 - **`students`**: `documento` (único), `ciudad`, `grupo`, `monitorRef`, `nombreOriginal`, `correoOriginal`, `nombre`, `correo`, `correoNorm`, `nombrePropuesto?`, `correoPropuesto?`, `estado` (`pendiente` | `corregido` | `validado`), `aceptaCorreoPersonal`, `validadoPor`, `validadoEn`, `actualizadoEn`. Índices: `documento` único, `{ciudad, estado}`, `correoNorm`.
-- **`users`**: `usuario` (único), `nombre`, `passwordHash` (bcrypt), `rol` (`monitor` | `admin`), `ciudades[]`, `activo`.
+- **`users`**: `usuario` (único), `nombre`, `passwordHash` (bcrypt), `rol` (`monitor` | `coordinador` | `admin`), `ciudades[]` (solo monitores), `activo`, `tokenVersion` (sube al restablecer la clave o desactivar: cierra las sesiones abiertas).
 - **`changeLog`**: `studentId`, `documento`, `campo`, `anterior`, `nuevo`, `actor {rol, usuario?}`, `accion` (`confirmar` | `corregir` | `aprobar` | `editar` | `validar_en_nombre` | `importar` | `eliminar`), `fecha`.
 - **`rateLimits`**: contador por `tipo:ip:ventana`, con índice TTL (MongoDB lo borra al terminar la ventana).
 
@@ -61,10 +64,12 @@ tests/                            # vitest
 | `POST /api/auth/login` · `logout` | Público + límite por IP | Cookie httpOnly firmada (7 días). Admin entra a `/admin`, monitor a `/monitor` |
 | `GET /api/monitor/estudiantes` | Monitor (sus ciudades) / admin | Lista con avisos |
 | `POST /api/monitor/estudiantes/[id]` | Monitor (su ciudad) / admin | Aprobar, editar, validar por el estudiante |
-| `GET /api/monitor/estudiantes/[id]` | Solo admin | Historial de cambios del estudiante |
-| `GET /api/admin/resumen` | Solo admin | Avance total y por ciudad (validados, corregidos, pendientes, monitores) |
-| `GET /api/admin/exportar` | Solo admin | Excel final |
+| `GET /api/monitor/estudiantes/[id]` | Coordinador / admin | Historial de cambios del estudiante |
+| `GET /api/admin/resumen` | Coordinador / admin | Avance total y por ciudad |
+| `GET /api/admin/exportar` | Coordinador / admin | Excel final |
 | `POST /api/admin/importar` | Solo admin | Vista previa o aplicación de una nueva lista |
+| `GET/POST /api/admin/usuarios` · `PATCH /api/admin/usuarios/[id]` · `POST …/[id]/clave` | Solo admin | Gestión de usuarios (la clave se devuelve una sola vez) |
+| `PATCH /api/admin/estudiantes/[id]` | Solo admin | Edición completa (documento único, normalizado) con historial |
 
 Toda entrada se valida con Zod. `scopeFilter` limita en el servidor cada consulta del monitor a sus ciudades (otra ciudad → 404). Las mutaciones verifican el `Origin`.
 
@@ -104,8 +109,7 @@ RATE_LIMIT_MAX=20            # opcional
 - **Atlas:** Network Access `0.0.0.0/0` (Vercel no tiene IP fija) con un usuario limitado a `validacion_jc`.
 
 ## 8. Pendiente / siguiente
-- Gestión de monitores desde la web (hoy: `npm run monitor:add` / `monitor:list`).
-- Cambio de clave por el propio monitor.
+- Cambio de clave por el propio monitor (hoy la restablece un admin).
 - Cierre del portal y borrado de datos al terminar la entrega de certificados.
 
 ## Verificación

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getCurrentUser, sameOrigin } from "@/lib/auth";
+import { exigir, sameOrigin } from "@/lib/auth";
 import { readRowsFromBuffer } from "@/lib/excel";
 import { aplicar, planificar } from "@/lib/importer";
 
@@ -15,9 +15,9 @@ const Eliminar = z.array(z.string().regex(/^[0-9a-f]{24}$/)).max(5000);
  */
 export async function POST(req: Request) {
   if (!sameOrigin(req)) return NextResponse.json({ error: "origen" }, { status: 403 });
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "sesion" }, { status: 401 });
-  if (user.rol !== "admin") return NextResponse.json({ error: "solo_admin" }, { status: 403 });
+  const g = await exigir("subir_lista");
+  if (g.error) return g.error;
+  const user = g.user;
 
   const form = await req.formData().catch(() => null);
   const archivo = form?.get("archivo");

@@ -12,11 +12,23 @@ npm run dev                  # http://localhost:3000
 npm test                     # reglas de nombre y correo
 ```
 
-## Coordinación desde la web (rol admin)
+## Roles
+
+| Rol | Puede |
+|---|---|
+| **monitor** | Solo sus ciudades: aprobar, corregir nombre y correo, validar por el estudiante |
+| **coordinador** | Todas las ciudades: lo mismo que un monitor + Resumen, historial y Excel final |
+| **admin** | Todo lo del coordinador + subir la lista, gestionar usuarios y editar cualquier campo de un estudiante (incluido el documento) |
+
+Los permisos están en `src/lib/permisos.ts` y se validan en el servidor (`exigir()` en cada ruta). `npm test` incluye pruebas de que coordinador y monitor reciben 403 en lo que no les corresponde.
+
+## Coordinación y administración desde la web
 
 - **`/admin`**: avance total y por ciudad, y botón para descargar el Excel final (Nombre completo, Correo, Ciudad; solo validados).
 - **`/monitor`**: la lista de todos los estudiantes, con el **historial** de cambios de cada uno.
-- **`/admin/importar`**: subir la lista actualizada. Muestra una vista previa (nuevos, con datos cambiados, protegidos, los que ya no están y errores por fila) y solo guarda al confirmar. Nunca modifica a quien ya validó o envió una corrección; los que ya no están solo se eliminan si se marcan.
+- **`/admin/usuarios`** (solo admin): crear, editar rol y ciudades, activar/desactivar y restablecer o asignar la clave (se muestra una sola vez; al cambiarla se cierran las sesiones abiertas de ese usuario).
+- **Editar todo** (solo admin, en Estudiantes): documento, nombre, correo, ciudad, grupo y estado, aunque ya esté validado. Queda en el historial.
+- **`/admin/importar`** (solo admin): subir la lista actualizada. Muestra una vista previa (nuevos, con datos cambiados, protegidos, los que ya no están y errores por fila) y solo guarda al confirmar. Nunca modifica a quien ya validó o envió una corrección; los que ya no están solo se eliminan si se marcan.
 
 ## Operación (scripts)
 
@@ -27,8 +39,10 @@ Usan la base de datos configurada en `.env.local`. Para operar sobre producción
 | `npm run import -- archivo.xlsx --dry-run` | Simula la importación (misma lógica que la página "Subir lista") |
 | `npm run import -- archivo.xlsx` | Crea los nuevos y actualiza los pendientes. Nunca toca validados ni corregidos |
 | `npm run import -- archivo.xlsx --eliminar-ausentes` | Además elimina a quienes ya no están en el archivo |
-| `npm run monitor:add -- usuario "Nombre" "Ciudad1,Ciudad2" [--clave=CLAVE]` | Crea un monitor (o actualiza el existente) |
-| `npm run monitor:add -- usuario "Nombre" --admin [--clave=CLAVE]` | Crea una cuenta de coordinación (ve todas las ciudades) |
+| `npm run monitor:add -- usuario "Nombre" "Ciudad1,Ciudad2" [--clave=CLAVE]` | Crea o actualiza un monitor |
+| `npm run monitor:add -- usuario "Nombre" --rol=coordinador` | Crea o actualiza un coordinador (sin ciudad) |
+| `npm run monitor:add -- usuario "Nombre" --rol=admin` | Crea o actualiza un administrador (sin ciudad) |
+| (cualquiera de los anteriores) `--nueva-clave` | En un usuario existente, genera una clave nueva |
 | `npm run monitor:list` | Lista los usuarios |
 | `npm run export` | Genera el Excel final en `exports/` |
 | `npm run cities:fix` | Vuelve a normalizar las ciudades guardadas |

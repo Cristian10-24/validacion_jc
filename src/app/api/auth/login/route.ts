@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { cookieOptions, createToken, SESSION_COOKIE, sameOrigin } from "@/lib/auth";
 import { collections } from "@/lib/db";
+import { inicioPorRol } from "@/lib/permisos";
 import { bloqueado, MENSAJE_BLOQUEO, registrarFallo } from "@/lib/rateLimit";
 
 const Body = z.object({ usuario: z.string().trim().min(1).max(60), clave: z.string().min(1).max(200) });
@@ -24,8 +25,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "credenciales" }, { status: 401 });
   }
 
-  // Coordinación entra al resumen; los monitores, a su grupo.
-  const res = NextResponse.json({ ok: true, destino: user.rol === "admin" ? "/admin" : "/monitor" });
-  res.cookies.set(SESSION_COOKIE, createToken(user._id.toHexString()), cookieOptions);
+  // Coordinación y administración entran al resumen; los monitores, a su grupo.
+  const res = NextResponse.json({ ok: true, destino: inicioPorRol(user.rol) });
+  res.cookies.set(SESSION_COOKIE, createToken(user._id.toHexString(), user.tokenVersion ?? 0), cookieOptions);
   return res;
 }

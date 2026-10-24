@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { z } from "zod";
-import { getCurrentUser, sameOrigin, scopeFilter } from "@/lib/auth";
+import { exigir, getCurrentUser, sameOrigin, scopeFilter } from "@/lib/auth";
 import { collections } from "@/lib/db";
 import { logChanges } from "@/lib/history";
 import { correosRepetidos, monitorRow } from "@/lib/monitor-view";
@@ -15,11 +15,10 @@ const Body = z.discriminatedUnion("accion", [
   z.object({ accion: z.literal("validar_en_nombre"), nombre: z.string().max(150), correo: z.string().max(150), confirmado: z.literal(true) }),
 ]);
 
-/** Historial de cambios de un estudiante (solo admin). */
+/** Historial de cambios de un estudiante (coordinación y administración). */
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "sesion" }, { status: 401 });
-  if (user.rol !== "admin") return NextResponse.json({ error: "solo_admin" }, { status: 403 });
+  const g = await exigir("ver_historial");
+  if (g.error) return g.error;
   const { id } = await params;
   if (!ObjectId.isValid(id)) return NextResponse.json({ error: "datos_invalidos" }, { status: 400 });
 

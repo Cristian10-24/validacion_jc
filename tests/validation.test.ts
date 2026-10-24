@@ -92,3 +92,12 @@ describe("leerFilas (importación)", () => {
     expect(r.avisos.map((a) => a.fila)).toEqual([3]);
   });
 });
+
+describe("ciudadExistente", () => {
+  it("reutiliza la ciudad existente aunque cambien tildes o mayúsculas", async () => {
+    const { ciudadExistente } = await import("@/lib/validation/name");
+    expect(ciudadExistente("Medellin", ["Medellín", "Cali"])).toBe("Medellín");
+    expect(ciudadExistente("CALI", ["Medellín", "Cali"])).toBe("Cali");
+    expect(ciudadExistente("Pasto", ["Medellín", "Cali"])).toBe("Pasto");
+  });
+});

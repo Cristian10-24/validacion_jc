@@ -151,3 +151,7 @@
 @media (max-width: 959px) {
   .fechaCol { display: none; }
 }
+
+/* Edición completa (administración) */
+.editGrid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 10px; margin-top: 14px; }
+.select { appearance: auto; padding-right: 10px; }
