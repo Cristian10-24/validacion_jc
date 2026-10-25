@@ -14,11 +14,16 @@ const filas = [
 const nombres = (estado?: FilaOrdenable["estado"]) => filas.filter((r) => !estado || r.estado === estado).sort(compararFilas).map((r) => r.nombre);
 
 describe("orden de la lista", () => {
-  it("Todos: validados y corregidos del más reciente al más antiguo, luego pendientes alfabéticos", () => {
+  it("Todos: corregidos (recientes primero), luego validados (recientes primero), luego pendientes alfabéticos", () => {
     expect(nombres()).toEqual([
-      "Carla Corregida Reciente", "Beto Validado Reciente", "Dora Corregida Vieja", "Ana Validada Vieja",
+      "Carla Corregida Reciente", "Dora Corregida Vieja",
+      "Beto Validado Reciente", "Ana Validada Vieja",
       "Ángel Pendiente", "Bruno Pendiente", "Zoe Pendiente",
     ]);
+  });
+  it("Todos: un corregido viejo va antes que un validado reciente", () => {
+    const filasMix = [f("Validado Hoy", "validado", "2026-10-24T12:00:00Z"), f("Corregido Hace Meses", "corregido", "2026-01-01T00:00:00Z")];
+    expect(filasMix.sort(compararFilas).map((r) => r.nombre)).toEqual(["Corregido Hace Meses", "Validado Hoy"]);
   });
   it("Validado: el más reciente primero", () => expect(nombres("validado")).toEqual(["Beto Validado Reciente", "Ana Validada Vieja"]));
   it("Corregido: el más reciente primero", () => expect(nombres("corregido")).toEqual(["Carla Corregida Reciente", "Dora Corregida Vieja"]));
