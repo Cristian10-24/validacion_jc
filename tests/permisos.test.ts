@@ -50,6 +50,7 @@ const soloAdmin: [string, () => Promise<Response>][] = [
   ["crear usuario", async () => (await import("@/app/api/admin/usuarios/route")).POST(json("POST", { usuario: "nuevo", nombre: "Nuevo Usuario", rol: "monitor", ciudades: ["Cali"] }))],
   ["editar usuario", async () => (await import("@/app/api/admin/usuarios/[id]/route")).PATCH(json("PATCH", { rol: "admin" }), ctx)],
   ["restablecer clave", async () => (await import("@/app/api/admin/usuarios/[id]/clave/route")).POST(json("POST", {}), ctx)],
+  ["exportar pendientes", async () => (await import("@/app/api/admin/exportar-pendientes/route")).GET(new Request("http://localhost/api/admin/exportar-pendientes"))],
   ["editar el documento de un estudiante", async () => (await import("@/app/api/admin/estudiantes/[id]/route")).PATCH(json("PATCH", { documento: "999", nombre: "Ana Ruiz", correo: "a@gmail.com", ciudad: "Cali", grupo: "", estado: "validado" }), ctx)],
 ];
 
@@ -70,6 +71,7 @@ describe("matriz de permisos", () => {
     subir_lista: [false, false, true],
     gestionar_usuarios: [false, false, true],
     editar_todo: [false, false, true],
+    exportar_pendientes: [false, false, true],
   };
   for (const [permiso, esperado] of Object.entries(tabla))
     it(permiso, () => expect(ROLES.map((r) => puede(r, permiso as Permiso))).toEqual(esperado));

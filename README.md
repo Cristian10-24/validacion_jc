@@ -27,7 +27,8 @@ Los permisos están en `src/lib/permisos.ts` y se validan en el servidor (`exigi
 - **`/admin`**: avance total y por ciudad, y botón para descargar el Excel final (Nombre completo, Correo, Ciudad; solo validados).
 - **`/monitor`**: la lista de todos los estudiantes, con el **historial** de cambios de cada uno.
 - **`/admin/usuarios`** (solo admin): crear, editar rol y ciudades, activar/desactivar y restablecer o asignar la clave (se muestra una sola vez; al cambiarla se cierran las sesiones abiertas de ese usuario).
-- **Editar todo** (solo admin, en Estudiantes): documento, nombre, correo, ciudad, grupo y estado, aunque ya esté validado. Queda en el historial.
+- **Descargar pendientes** (solo admin, en Estudiantes): Excel con Nombre completo, Correo, Documento y Ciudad de los pendientes; si hay una ciudad filtrada, solo esa.
+- **Editar datos** (solo admin, menú ⋯ en Estudiantes): documento, nombre, correo, ciudad, grupo y estado, aunque ya esté validado. Queda en el historial.
 - **`/admin/importar`** (solo admin): subir la lista actualizada. Muestra una vista previa (nuevos, con datos cambiados, protegidos, los que ya no están y errores por fila) y solo guarda al confirmar. Nunca modifica a quien ya validó o envió una corrección; los que ya no están solo se eliminan si se marcan.
 
 ## Operación (scripts)

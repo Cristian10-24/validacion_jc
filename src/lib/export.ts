@@ -31,6 +31,37 @@ export async function excelCertificados(filas: FilaCertificado[]): Promise<Buffe
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
 
+// ----- Pendientes (solo administración): para hacerles seguimiento -----
+
+export type FilaPendiente = { nombre: string; correo: string; documento: string; ciudad: string };
+
+/** Estudiantes en estado pendiente, opcionalmente de una sola ciudad. Solo lectura. */
+export async function filasPendientes(students: Collection<Student>, ciudad?: string): Promise<FilaPendiente[]> {
+  const docs = await students
+    .find({ estado: "pendiente", ...(ciudad ? { ciudad } : {}) }, { projection: { nombre: 1, correo: 1, documento: 1, ciudad: 1 } })
+    .toArray();
+  return docs
+    .map((s) => ({ nombre: s.nombre, correo: s.correo, documento: s.documento, ciudad: s.ciudad }))
+    .sort((a, b) => a.ciudad.localeCompare(b.ciudad, "es") || a.nombre.localeCompare(b.nombre, "es"));
+}
+
+export async function excelPendientes(filas: FilaPendiente[]): Promise<Buffer> {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("Pendientes");
+  ws.columns = [
+    { header: "Nombre completo", key: "nombre", width: 42 },
+    { header: "Correo", key: "correo", width: 40 },
+    { header: "Documento", key: "documento", width: 18 },
+    { header: "Ciudad", key: "ciudad", width: 22 },
+  ];
+  ws.getRow(1).font = { bold: true };
+  ws.views = [{ state: "frozen", ySplit: 1 }];
+  ws.addRows(filas);
+  // El documento como texto: Excel no lo convierte a número ni le quita ceros.
+  ws.getColumn("documento").numFmt = "@";
+  return Buffer.from(await wb.xlsx.writeBuffer());
+}
+
 export function nombreArchivo(sufijo = ""): string {
   const hoy = new Date().toLocaleDateString("sv-SE", { timeZone: "America/Bogota" }); // AAAA-MM-DD
   return `certificados_jovenes_creativos_${hoy}${sufijo}.xlsx`;

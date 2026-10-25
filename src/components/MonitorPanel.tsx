@@ -7,7 +7,9 @@ import { puede, ROL_TXT, type RolUsuario } from "@/lib/permisos";
 import type { Estado } from "@/lib/types";
 import { checkEmail, domainOf, emailError } from "@/lib/validation/email";
 import { cleanSpaces, nameWarnings } from "@/lib/validation/name";
+import { compararFilas } from "@/lib/orden";
 import AppShell from "./AppShell";
+import MenuFila from "./MenuFila";
 import s from "./MonitorPanel.module.css";
 
 type Filtro = "all" | Estado;
@@ -19,7 +21,6 @@ const STY: Record<Estado, { label: string; bg: string; fg: string; dot: string }
   corregido: { label: "Corregido", bg: "var(--yellow-soft)", fg: "var(--yellow-text)", dot: "var(--yellow)" },
   pendiente: { label: "Pendiente", bg: "var(--red-soft)", fg: "var(--red-dark)", dot: "var(--red)" },
 };
-const ORDEN: Record<Estado, number> = { corregido: 0, pendiente: 1, validado: 2 };
 
 const EMPTY: Record<Filtro | "search", [string, string, string, string, string]> = {
   pendiente: ["✓", "¡No hay pendientes!", "Todo tu grupo ya entró a validar.", "var(--green-soft)", "var(--green)"],
@@ -102,6 +103,9 @@ export default function MonitorPanel({ user, appUrl, inicial }: { user: SessionU
   const verTodas = puede(user.rol, "ver_todas_las_ciudades");
   const verHist = puede(user.rol, "ver_historial");
   const editarTodo = puede(user.rol, "editar_todo");
+  const exportarPend = puede(user.rol, "exportar_pendientes");
+  const [menu, setMenu] = useState<string | null>(null); // fila con el menú "⋯" abierto
+  const [descargando, setDescargando] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   /** silencioso = refresco automático: no muestra error si ya hay datos en pantalla. */
@@ -154,6 +158,27 @@ export default function MonitorPanel({ user, appUrl, inicial }: { user: SessionU
     }
   }
 
+  /** Excel de pendientes (solo admin): respeta la ciudad filtrada. */
+  async function descargarPendientes() {
+    setDescargando(true);
+    try {
+      const res = await fetch(`/api/admin/exportar-pendientes${ciudad ? `?ciudad=${encodeURIComponent(ciudad)}` : ""}`, { cache: "no-store" });
+      if (res.status === 401) return window.location.assign("/login");
+      if (!res.ok) throw new Error();
+      const archivo = /filename="([^"]+)"/.exec(res.headers.get("Content-Disposition") ?? "")?.[1] ?? "pendientes.xlsx";
+      const url = URL.createObjectURL(await res.blob());
+      const a = Object.assign(document.createElement("a"), { href: url, download: archivo });
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      showToast(`Descargado: ${res.headers.get("X-Filas") ?? ""} pendientes${ciudad ? ` de ${ciudad}` : ""}`, true);
+    } catch {
+      showToast("No pudimos generar el archivo. Intenta otra vez.");
+    }
+    setDescargando(false);
+  }
+
   async function verHistorial(row: MonitorRow) {
     setHistorial({ row, items: null, error: false });
     try {
@@ -187,7 +212,7 @@ export default function MonitorPanel({ user, appUrl, inicial }: { user: SessionU
     return enCiudad
       .filter((r) => filtro === "all" || r.estado === filtro)
       .filter((r) => !t || fold(`${r.nombre} ${r.nombrePropuesto ?? ""} ${r.correo} ${r.correoPropuesto ?? ""} ${r.documento}`).includes(t))
-      .sort((a, b) => ORDEN[a.estado] - ORDEN[b.estado] || a.nombre.localeCompare(b.nombre, "es"));
+      .sort(compararFilas);
   }, [enCiudad, filtro, q]);
 
   const kicker = ciudad || (verTodas ? "Todas las ciudades" : user.ciudades.join(" · "));
@@ -277,9 +302,17 @@ export default function MonitorPanel({ user, appUrl, inicial }: { user: SessionU
               </select>
             )}
           </div>
-          <button type="button" className={s.copyBtn} onClick={copiarPendientes} disabled={!rows}>
-            Copiar lista de pendientes ({cnt.pendiente})
-          </button>
+          <div className={s.headActions}>
+            {exportarPend && (
+              <button type="button" className={s.dlBtn} onClick={descargarPendientes} disabled={!rows || descargando || cnt.pendiente === 0}
+                title={ciudad ? `Excel con los pendientes de ${ciudad}` : "Excel con los pendientes de todas las ciudades"}>
+                {descargando ? "Generando…" : `Descargar pendientes (${cnt.pendiente})`}
+              </button>
+            )}
+            <button type="button" className={s.copyBtn} onClick={copiarPendientes} disabled={!rows}>
+              Copiar lista de pendientes ({cnt.pendiente})
+            </button>
+          </div>
         </div>
 
         <div className={s.progress} aria-hidden>
@@ -340,22 +373,25 @@ export default function MonitorPanel({ user, appUrl, inicial }: { user: SessionU
                     {r.estado === "validado" && r.validadoPor && r.validadoPor !== "estudiante" && <div style={{ fontSize: 12, color: "var(--muted-2)" }}>por monitor</div>}
                   </div>
                   <div className={s.acts}>
+                    {/* Solo la acción principal a la vista; el resto va en el menú "⋯". */}
                     {corr && <>
                       <button type="button" className={`${s.act} ${s.actGreen}`} onClick={() => aprobar(r)} disabled={busy === r.id}>{busy === r.id ? "…" : "Aprobar"}</button>
                       <button type="button" className={`${s.act} ${s.actGhost}`} onClick={() => abrir(r, "editar")}>Editar</button>
                     </>}
                     {r.estado === "pendiente" && (
-                      <button type="button" className={`${s.act} ${s.actOrange}`} onClick={() => abrir(r, "validar_en_nombre")}>Validar por el estudiante</button>
+                      <button type="button" className={`${s.act} ${s.actOrange}`} onClick={() => abrir(r, "validar_en_nombre")} title="Validar en nombre del estudiante" aria-label={`Validar en nombre de ${nombreVisible}`}>Validar</button>
                     )}
-                    {r.estado === "validado" && (
-                      <button type="button" className={`${s.act} ${s.actLink}`} onClick={() => abrir(r, "editar")}>Corregir</button>
-                    )}
-                    {editarTodo && (
-                      <button type="button" className={`${s.act} ${s.actLink}`} onClick={() => abrirEdicion(r)}>Editar todo</button>
-                    )}
-                    {verHist && (
-                      <button type="button" className={`${s.act} ${s.actLink}`} onClick={() => verHistorial(r)}>Historial</button>
-                    )}
+                    <MenuFila
+                      abierto={menu === r.id}
+                      onToggle={() => setMenu(menu === r.id ? null : r.id)}
+                      onCerrar={() => setMenu(null)}
+                      nombre={nombreVisible}
+                      items={[
+                        ...(r.estado === "validado" ? [{ label: "Corregir datos", on: () => abrir(r, "editar") }] : []),
+                        ...(verHist ? [{ label: "Historial", on: () => verHistorial(r) }] : []),
+                        ...(editarTodo ? [{ label: "Editar datos", on: () => abrirEdicion(r) }] : []),
+                      ]}
+                    />
                   </div>
                 </div>
 
