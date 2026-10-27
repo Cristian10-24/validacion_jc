@@ -107,7 +107,8 @@ Sigue [INSTALACION.md](INSTALACION.md):
 2. Configura las propiedades:
    - `TESTIMONIOS_URL` = `https://validacion.tocaunavida.org/api/testimonios/webhook`
    - `TESTIMONIOS_SECRETO` = el secreto del paso 1
-3. Ejecuta **`probarConexion`**: debe decir *"Conexión correcta (secreto aceptado)"*.
+   - `HOJA_RESPUESTAS` = el nombre exacto de la pestaña de respuestas (p. ej. `Testimonio-2026`)
+3. Ejecuta **`probarConexion`**: debe nombrar la pestaña con sus 7 columnas y decir *"Conexión correcta (secreto aceptado)"*.
 4. Ejecuta **`cargaInicial`**: envía todas las respuestas que ya existen. Repetirla no duplica nada.
 5. Crea los activadores:
    - **`alEnviarFormulario`** (Al enviar el formulario);
