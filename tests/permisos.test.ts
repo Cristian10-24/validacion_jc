@@ -72,6 +72,12 @@ describe("matriz de permisos", () => {
     gestionar_usuarios: [false, false, true],
     editar_todo: [false, false, true],
     exportar_pendientes: [false, false, true],
+    testimonios_ver: [true, true, true],
+    testimonios_comentar: [true, true, true],
+    testimonios_subir_lista: [false, false, true],
+    testimonios_sin_duenio: [false, false, true],
+    testimonios_exportar_pendientes: [true, true, true],
+    testimonios_resumen: [false, true, true],
   };
   for (const [permiso, esperado] of Object.entries(tabla))
     it(permiso, () => expect(ROLES.map((r) => puede(r, permiso as Permiso))).toEqual(esperado));

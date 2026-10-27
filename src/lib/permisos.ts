@@ -16,12 +16,20 @@ export type Permiso =
   | "subir_lista"
   | "gestionar_usuarios"
   | "editar_todo"
-  | "exportar_pendientes";
+  | "exportar_pendientes"
+  // Módulo de testimonios
+  | "testimonios_ver"          // monitor: sus ciudades; coordinación y admin: todas
+  | "testimonios_comentar"
+  | "testimonios_subir_lista"
+  | "testimonios_sin_duenio"   // ver, asignar y descartar respuestas sin dueño
+  | "testimonios_exportar_pendientes" // Excel de pendientes: monitor solo sus ciudades
+  | "testimonios_resumen";            // avance por ciudad (coordinación y admin)
 
 const PERMISOS: Record<RolUsuario, readonly Permiso[]> = {
-  monitor: [],
-  coordinador: ["ver_todas_las_ciudades", "ver_resumen", "descargar_excel", "ver_historial"],
-  admin: ["ver_todas_las_ciudades", "ver_resumen", "descargar_excel", "ver_historial", "subir_lista", "gestionar_usuarios", "editar_todo", "exportar_pendientes"],
+  monitor: ["testimonios_ver", "testimonios_comentar", "testimonios_exportar_pendientes"],
+  coordinador: ["ver_todas_las_ciudades", "ver_resumen", "descargar_excel", "ver_historial", "testimonios_ver", "testimonios_comentar", "testimonios_exportar_pendientes", "testimonios_resumen"],
+  admin: ["ver_todas_las_ciudades", "ver_resumen", "descargar_excel", "ver_historial", "subir_lista", "gestionar_usuarios", "editar_todo", "exportar_pendientes",
+    "testimonios_ver", "testimonios_comentar", "testimonios_subir_lista", "testimonios_sin_duenio", "testimonios_exportar_pendientes", "testimonios_resumen"],
 };
 
 export function puede(rol: string | undefined, permiso: Permiso): boolean {

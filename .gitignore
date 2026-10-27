@@ -14,3 +14,6 @@ prototipos/*.csv
 prototipos/*.zip
 *.xlsx
 *.csv
+
+# Capturas del módulo de testimonios: se guardan fuera del repo (C:\ROFÉ\PAGINAS\capturas-testimonios)
+docs/testimonios/capturas/

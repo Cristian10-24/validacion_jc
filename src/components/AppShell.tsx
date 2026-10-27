@@ -4,14 +4,19 @@ import type { SessionUser } from "@/lib/auth";
 import { puede, ROL_TXT, type Permiso } from "@/lib/permisos";
 import s from "./AppShell.module.css";
 
-export type Seccion = "resumen" | "estudiantes" | "importar" | "usuarios";
+export type Seccion = "resumen" | "estudiantes" | "importar" | "usuarios" | "testimonios" | "testimonios_resumen" | "testimonios_lista" | "testimonios_sin_duenio";
 
 // Cada sección aparece solo si el rol tiene el permiso (el servidor lo vuelve a validar).
 const NAV: { key: Seccion; label: string; href: string; permiso?: Permiso }[] = [
   { key: "resumen", label: "Resumen", href: "/admin", permiso: "ver_resumen" },
   { key: "estudiantes", label: "Estudiantes", href: "/monitor" },
+  { key: "testimonios", label: "Testimonios", href: "/testimonios", permiso: "testimonios_ver" },
+  { key: "testimonios_resumen", label: "Avance testimonios", href: "/testimonios/resumen", permiso: "testimonios_resumen" },
   { key: "importar", label: "Subir lista", href: "/admin/importar", permiso: "subir_lista" },
   { key: "usuarios", label: "Usuarios", href: "/admin/usuarios", permiso: "gestionar_usuarios" },
+  // Módulo de testimonios (separado de Estudiantes)
+  { key: "testimonios_lista", label: "Lista testimonios", href: "/admin/testimonios/lista", permiso: "testimonios_subir_lista" },
+  { key: "testimonios_sin_duenio", label: "Sin dueño", href: "/admin/testimonios/sin-duenio", permiso: "testimonios_sin_duenio" },
 ];
 
 export function iniciales(nombre: string): string {
@@ -20,7 +25,7 @@ export function iniciales(nombre: string): string {
 
 export default function AppShell({ user, active, children }: { user: SessionUser; active: Seccion; children: React.ReactNode }) {
   const nav = user.rol === "monitor"
-    ? [{ key: "estudiantes" as Seccion, label: "Mi grupo", href: "/monitor" }]
+    ? [{ key: "estudiantes" as Seccion, label: "Mi grupo", href: "/monitor" }, { key: "testimonios" as Seccion, label: "Testimonios", href: "/testimonios" }]
     : NAV.filter((n) => !n.permiso || puede(user.rol, n.permiso));
 
   async function salir() {
