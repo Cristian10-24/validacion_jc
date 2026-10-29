@@ -4,7 +4,7 @@ import type { Filter } from "mongodb";
 import type { SessionUser } from "@/lib/auth";
 import { puede } from "@/lib/permisos";
 import { testimonios, type Participante } from "./db";
-import { estadoDe, parseMarcaTemporal, type EstadoTestimonio } from "./estado";
+import { estadoDe, parseMarcaTemporal, ultimaActividad, type EstadoTestimonio } from "./estado";
 
 /** Filtro obligatorio de participantes según el rol (mismo criterio que scopeFilter de estudiantes). */
 export function alcanceTestimonios(user: Pick<SessionUser, "rol" | "ciudades">): Filter<Participante> {
@@ -12,7 +12,7 @@ export function alcanceTestimonios(user: Pick<SessionUser, "rol" | "ciudades">):
 }
 
 export type EnvioVista = { id: string; marcaTemporal: string; fecha: string | null; recibidaEn: string; enlaces: string[]; cruzadoPor: string | null };
-export type ComentarioVista = { id: string; texto: string; autor: { nombre: string; usuario: string; rol: string }; fecha: string };
+export type ComentarioVista = { id: string; texto: string; autor: { nombre: string; usuario: string; rol: string }; fecha: string; editadoEn: string | null };
 export type FilaTestimonio = {
   id: string;
   nombre: string;
@@ -22,10 +22,14 @@ export type FilaTestimonio = {
   celular: string;
   correo: string;
   estado: EstadoTestimonio;
+  conComentarios: boolean;        // etiqueta (no estado): alguien ya dejó un comentario
   envios: EnvioVista[];          // el más reciente primero
   comentarios: ComentarioVista[]; // en orden cronológico
   ultimoEnvio: number | null;
+  /** Actividad más reciente de sus comentarios (creación o edición), en ms. */
   ultimoComentario: number | null;
+  /** true si esa actividad más reciente es una edición: se muestra "(editado)". */
+  ultimoComentarioEditado: boolean;
 };
 
 export async function filasTestimonios(user: Pick<SessionUser, "rol" | "ciudades">): Promise<FilaTestimonio[]> {
@@ -47,18 +51,20 @@ export async function filasTestimonios(user: Pick<SessionUser, "rol" | "ciudades
   const notasDe = new Map<string, ComentarioVista[]>();
   for (const c of notas) {
     const k = c.participanteId.toHexString();
-    notasDe.set(k, [...(notasDe.get(k) ?? []), { id: c._id.toHexString(), texto: c.texto, autor: c.autor, fecha: c.fecha.toISOString() }]);
+    notasDe.set(k, [...(notasDe.get(k) ?? []), { id: c._id.toHexString(), texto: c.texto, autor: c.autor, fecha: c.fecha.toISOString(), editadoEn: c.editadoEn?.toISOString() ?? null }]);
   }
 
   return lista.map((p) => {
     const k = p._id.toHexString();
     const ev = (enviosDe.get(k) ?? []).sort((a, b) => Date.parse(b.fecha ?? b.recibidaEn) - Date.parse(a.fecha ?? a.recibidaEn));
     const cm = notasDe.get(k) ?? [];
+    const ua = ultimaActividad(cm);
     return {
       id: k, nombre: p.nombre, documento: p.documento, ciudad: p.ciudad, ciudadOriginal: p.ciudadOriginal ?? null,
-      celular: p.celular, correo: p.correo, estado: estadoDe(ev.length, cm.length), envios: ev, comentarios: cm,
+      celular: p.celular, correo: p.correo, estado: estadoDe(ev.length), conComentarios: cm.length > 0, envios: ev, comentarios: cm,
       ultimoEnvio: ev[0] ? Date.parse(ev[0].fecha ?? ev[0].recibidaEn) : null,
-      ultimoComentario: cm.length ? Date.parse(cm[cm.length - 1].fecha) : null,
+      ultimoComentario: ua?.ms ?? null,
+      ultimoComentarioEditado: ua?.editado ?? false,
     };
   });
 }

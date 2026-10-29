@@ -1,31 +1,35 @@
-// Excel de pendientes de testimonio (Pendiente y Seguimiento: los que aún no envían el video):
-// Nombre completo, Celular (con indicativo), Correo, Documento, Ciudad, Estado y Último comentario.
+// Excel de pendientes de testimonio (todos los que aún no envían el video, con o sin comentarios):
+// Nombre completo, Celular (con indicativo), Correo, Documento, Ciudad, Con comentarios (Sí/No) y Último comentario.
 // Solo lectura; el alcance por ciudad lo pone filasTestimonios (monitor: solo sus ciudades).
 import ExcelJS from "exceljs";
 import { celularConIndicativo } from "./celular";
+import { ultimaActividad } from "./estado";
 import type { FilaTestimonio } from "./vista";
 
-export type FilaPendienteTestimonio = { nombre: string; celular: string; correo: string; documento: string; ciudad: string; estado: "Pendiente" | "Seguimiento"; ultimoComentario: string };
+export type FilaPendienteTestimonio = { nombre: string; celular: string; correo: string; documento: string; ciudad: string; conComentarios: "Sí" | "No"; ultimoComentario: string };
 
-/** "26/10/2026 8:00 a. m. · Coordinadora Demo: Confirmó que lo envía hoy." (hora de Colombia). */
-export function textoComentario(c: { texto: string; fecha: string; autor: { nombre: string } }): string {
-  const d = new Date(c.fecha), tz = "America/Bogota";
+/**
+ * "26/10/2026 8:00 a. m. · Coordinadora Demo: Confirmó que lo envía hoy." (hora de Colombia).
+ * Si la actividad más reciente fue una edición: la fecha de la edición y "(editado)".
+ */
+export function textoComentario(c: { texto: string; fecha: string; editadoEn?: string | null; autor: { nombre: string } }, editado = false): string {
+  const d = new Date(editado && c.editadoEn ? c.editadoEn : c.fecha), tz = "America/Bogota";
   const cuando = `${d.toLocaleDateString("es-CO", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: tz })} ${d.toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: tz })}`;
-  return `${cuando} · ${c.autor.nombre}: ${c.texto.replace(/\s*\n\s*/g, " ")}`;
+  return `${cuando}${editado ? " (editado)" : ""} · ${c.autor.nombre}: ${c.texto.replace(/\s*\n\s*/g, " ")}`;
 }
 
-/** Sin video todavía (Pendiente y Seguimiento), de una ciudad si se indica. Orden: ciudad, Pendiente antes que Seguimiento, nombre. */
+/** Todos los pendientes, de una ciudad si se indica. Orden: ciudad, primero los sin comentarios, nombre. */
 export function pendientesParaExportar(filas: FilaTestimonio[], ciudad?: string): FilaPendienteTestimonio[] {
   return filas
-    .filter((f) => f.estado !== "realizado" && (!ciudad || f.ciudad === ciudad))
+    .filter((f) => f.estado === "pendiente" && (!ciudad || f.ciudad === ciudad))
     .map((f): FilaPendienteTestimonio => {
-      const ultimo = f.comentarios[f.comentarios.length - 1];
+      const ua = ultimaActividad(f.comentarios);
       return {
         nombre: f.nombre, celular: celularConIndicativo(f.celular, f.ciudad), correo: f.correo, documento: f.documento, ciudad: f.ciudad,
-        estado: f.estado === "seguimiento" ? "Seguimiento" : "Pendiente", ultimoComentario: ultimo ? textoComentario(ultimo) : "",
+        conComentarios: f.conComentarios ? "Sí" : "No", ultimoComentario: ua ? textoComentario(f.comentarios[ua.indice], ua.editado) : "",
       };
     })
-    .sort((a, b) => a.ciudad.localeCompare(b.ciudad, "es") || (a.estado === b.estado ? 0 : a.estado === "Pendiente" ? -1 : 1) || a.nombre.localeCompare(b.nombre, "es"));
+    .sort((a, b) => a.ciudad.localeCompare(b.ciudad, "es") || (a.conComentarios === b.conComentarios ? 0 : a.conComentarios === "No" ? -1 : 1) || a.nombre.localeCompare(b.nombre, "es"));
 }
 
 export async function excelPendientesTestimonios(filas: FilaPendienteTestimonio[]): Promise<Buffer> {
@@ -37,7 +41,7 @@ export async function excelPendientesTestimonios(filas: FilaPendienteTestimonio[
     { header: "Correo", key: "correo", width: 36 },
     { header: "Documento", key: "documento", width: 18 },
     { header: "Ciudad", key: "ciudad", width: 20 },
-    { header: "Estado", key: "estado", width: 14 },
+    { header: "Con comentarios", key: "conComentarios", width: 16 },
     { header: "Último comentario", key: "ultimoComentario", width: 70 },
   ];
   ws.getRow(1).font = { bold: true };

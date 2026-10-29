@@ -37,8 +37,9 @@ Hace falta saber quién ya lo envió, hacer seguimiento a quien falta y resolver
 
 El **estado no se guarda**: se calcula al leer, así nunca queda desincronizado.
 - **Realizado** (verde): tiene al menos una respuesta con `cruce` auto o manual. Se muestran la más reciente y las anteriores.
-- **Seguimiento** (amarillo): no está realizado y tiene al menos un comentario.
-- **Pendiente** (rojo): ninguno de los dos.
+- **Pendiente** (rojo): no tiene ninguna respuesta auto o manual (las sin dueño, en conflicto o descartadas no cuentan).
+- *(Ajuste aprobado, 2026-10-29: "Seguimiento" dejó de ser un estado.)* Un pendiente con comentarios sigue siendo **Pendiente** y lleva la etiqueta amarilla **"Con comentarios"**. Contadores: Todos = Realizado + Pendiente; "Con comentarios" es un filtro dentro de Pendiente. Orden: pendientes sin comentarios (alfabético) → pendientes con comentarios (el comentario más reciente primero) → realizados (el envío más reciente primero). El Excel trae todos los pendientes con la columna "Con comentarios" (Sí/No) y el último comentario.
+- *(Ajuste aprobado, 2026-10-29.)* **Editar comentarios:** solo su autor (por `autor.usuario`; los demás reciben 403), con las mismas validaciones que al crear. Se actualiza solo ese comentario (`texto`, `editadoEn`, `editadoPor`), sin guardar el texto anterior, y se muestra "Editado · fecha". Los comentarios no se pueden borrar.
 
 ## 2. Normalización y cruce (`src/lib/testimonios/cruce.ts`, funciones puras con pruebas)
 

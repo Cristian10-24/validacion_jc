@@ -66,13 +66,11 @@ export default function TestimoniosResumen({ user }: { user: SessionUser }) {
           </div>
           <div className={s.heroBar} aria-hidden>
             <i style={{ width: `${t ? pct(t.realizado, t.total) : 0}%`, background: "#3DD598" }} />
-            <i style={{ width: `${t ? pct(t.seguimiento, t.total) : 0}%`, background: "var(--yellow)" }} />
           </div>
           {t && (
             <div className={s.legend}>
               <span><i className={s.dot} style={{ background: "#3DD598" }} />{plural(t.realizado, "realizado", "realizados")}</span>
-              <span><i className={s.dot} style={{ background: "var(--yellow)" }} />{t.seguimiento} en seguimiento</span>
-              <span><i className={s.dot} style={{ background: "#FF7A85" }} />{plural(t.pendiente, "pendiente", "pendientes")}</span>
+              <span><i className={s.dot} style={{ background: "#FF7A85" }} />{plural(t.pendiente, "pendiente", "pendientes")}{t.conComentarios ? ` (${t.conComentarios} con comentarios)` : ""}</span>
             </div>
           )}
         </section>
@@ -90,19 +88,19 @@ export default function TestimoniosResumen({ user }: { user: SessionUser }) {
           <section className={s.final}>
             <div className={s.finalTitle}>Pendientes por contactar</div>
             <div className={s.finalText}>
-              Excel de quienes aún no envían su video: <b>{t ? t.pendiente + t.seguimiento : "–"}</b> ({t?.pendiente ?? "–"} pendientes y {t?.seguimiento ?? "–"} en seguimiento), con celular con indicativo y su último comentario.
+              Excel de los <b>{t?.pendiente ?? "–"} pendientes</b> (con y sin comentarios), con celular con indicativo y su último comentario.
             </div>
             {(dl.estado === "idle" || dl.estado === "error") && (
               <>
                 {dl.estado === "error" && <div className={s.errBox}>No pudimos generar el archivo. Revisa tu conexión e intenta otra vez.</div>}
-                <button type="button" className="btn btn-primary" onClick={exportar} disabled={!t || t.pendiente + t.seguimiento === 0}>{dl.estado === "error" ? "Intentar de nuevo" : "Exportar pendientes"}</button>
+                <button type="button" className="btn btn-primary" onClick={exportar} disabled={!t || t.pendiente === 0}>{dl.estado === "error" ? "Intentar de nuevo" : "Exportar pendientes"}</button>
               </>
             )}
             {dl.estado === "loading" && <button type="button" className="btn btn-primary" disabled><span className="spinner-sm" />Generando Excel…</button>}
             {dl.estado === "done" && (
               <div className={s.done}>
                 <div>
-                  <div className={s.doneTitle}>Descargado ✓ · {dl.filas} {dl.filas === 1 ? "persona" : "personas"}</div>
+                  <div className={s.doneTitle}>Descargado ✓ · {dl.filas} {dl.filas === 1 ? "pendiente" : "pendientes"}</div>
                   <div className={s.doneFile}>{dl.archivo}</div>
                 </div>
                 <button type="button" className={s.doneBtn} onClick={() => setDl({ estado: "idle" })}>Otra vez</button>
@@ -122,7 +120,7 @@ export default function TestimoniosResumen({ user }: { user: SessionUser }) {
       </div>
       {data && <div className={s.updated}>De menor a mayor avance · actualizado {hora} · se actualiza solo cada 30 s</div>}
 
-      <div className={s.tHead}><span>Ciudad</span><span>Avance</span><span>%</span><span>Realizados</span><span>Seguimiento</span><span>Pendientes</span><span>Monitores</span></div>
+      <div className={s.tHead}><span>Ciudad</span><span>Avance</span><span>%</span><span>Realizados</span><span>Pendientes</span><span>Con comentarios</span><span>Monitores</span></div>
       {error && !data && <div className={s.errBox} style={{ marginTop: 12 }}>No pudimos cargar el resumen. <button type="button" className="btn-link" onClick={() => cargar()}>Intentar de nuevo</button></div>}
       {!data && !error && <div className={s.skeleton}>{Array.from({ length: 6 }, (_, i) => <i key={i} />)}</div>}
       {data && data.ciudades.length === 0 && <div className={s.updated} style={{ marginTop: 12 }}>Todavía no hay participantes. Sube la lista en "Lista testimonios".</div>}
@@ -133,13 +131,12 @@ export default function TestimoniosResumen({ user }: { user: SessionUser }) {
             <div className={s.cName}>{c.ciudad}</div>
             <div className={s.cBar} aria-hidden>
               <i style={{ width: `${p}%`, background: colorAvance(p) }} />
-              <i style={{ width: `${pct(c.seguimiento, c.total)}%`, background: "var(--yellow-soft)" }} />
             </div>
             <div className={s.cPct}>{Math.round(p)}%</div>
             <div className={s.cNums}>
               <span><b>{c.realizado}</b> / {c.total}<span className={s.numLabel}>{c.realizado === 1 ? " realizado" : " realizados"}</span></span>
-              <span><b>{c.seguimiento}</b><span className={s.numLabel}> en seguimiento</span></span>
               <span><b>{c.pendiente}</b><span className={s.numLabel}>{c.pendiente === 1 ? " pendiente" : " pendientes"}</span></span>
+              <span title="Informativo: pendientes que ya tienen comentarios (incluidos en Pendientes)"><b style={{ color: "var(--yellow-text)" }}>{c.conComentarios}</b><span className={s.numLabel}> con comentarios</span></span>
             </div>
             <div className={s.cMon}>{c.monitores.join(", ") || "Sin monitor asignado"}</div>
           </a>

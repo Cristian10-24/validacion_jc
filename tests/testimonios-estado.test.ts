@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { celularConIndicativo } from "@/lib/testimonios/celular";
-import { compararTestimonios, estadoDe, parseMarcaTemporal, type FilaOrdenTestimonio } from "@/lib/testimonios/estado";
+import { compararTestimonios, estadoDe, parseMarcaTemporal, ultimaActividad, type FilaOrdenTestimonio } from "@/lib/testimonios/estado";
 
 describe("estado", () => {
-  it("realizado si llegó el video (aunque tenga comentarios), seguimiento si solo hay comentarios, pendiente si nada", () => {
-    expect(estadoDe(1, 3)).toBe("realizado");
-    expect(estadoDe(0, 1)).toBe("seguimiento");
-    expect(estadoDe(0, 0)).toBe("pendiente");
+  it("solo dos estados: realizado con al menos un envío asignado; si no, pendiente (los comentarios no cambian el estado)", () => {
+    expect(estadoDe(1)).toBe("realizado");
+    expect(estadoDe(3)).toBe("realizado");
+    expect(estadoDe(0)).toBe("pendiente");
   });
 });
 
@@ -28,18 +28,18 @@ describe("orden de la lista", () => {
   const filas = [
     f("Zoe Pendiente", "pendiente"),
     f("Ana Realizada Vieja", "realizado", 100),
-    f("Beto Seguimiento Viejo", "seguimiento", null, 50),
+    f("Beto Comentado Viejo", "pendiente", null, 50),
     f("Ángel Pendiente", "pendiente"),
-    f("Carla Realizada Reciente", "realizado", 900),
-    f("Dora Seguimiento Reciente", "seguimiento", null, 800),
+    f("Carla Realizada Reciente", "realizado", 900, 950), // realizado con comentarios: sigue con los realizados
+    f("Dora Comentada Reciente", "pendiente", null, 800),
   ];
   const orden = (estado?: FilaOrdenTestimonio["estado"]) => filas.filter((x) => !estado || x.estado === estado).sort(compararTestimonios).map((x) => x.nombre);
-  it("Todos: seguimiento (comentario reciente primero), pendientes alfabéticos, realizados (envío reciente primero)", () => {
-    expect(orden()).toEqual(["Dora Seguimiento Reciente", "Beto Seguimiento Viejo", "Ángel Pendiente", "Zoe Pendiente", "Carla Realizada Reciente", "Ana Realizada Vieja"]);
+  it("Todos: pendientes sin comentarios (alfabético), con comentarios (el más reciente primero), realizados (envío reciente primero)", () => {
+    expect(orden()).toEqual(["Ángel Pendiente", "Zoe Pendiente", "Dora Comentada Reciente", "Beto Comentado Viejo", "Carla Realizada Reciente", "Ana Realizada Vieja"]);
   });
-  it("vistas filtradas", () => {
+  it("vistas filtradas: Pendiente incluye a los que tienen comentarios, después de los que nadie ha contactado", () => {
+    expect(orden("pendiente")).toEqual(["Ángel Pendiente", "Zoe Pendiente", "Dora Comentada Reciente", "Beto Comentado Viejo"]);
     expect(orden("realizado")).toEqual(["Carla Realizada Reciente", "Ana Realizada Vieja"]);
-    expect(orden("pendiente")).toEqual(["Ángel Pendiente", "Zoe Pendiente"]);
   });
 });
 
@@ -72,5 +72,18 @@ describe("celular con indicativo según la ciudad (solo presentación)", () => {
     expect(celularConIndicativo("", "Cali")).toBe("");
     expect(celularConIndicativo(null, "Cali")).toBe("");
     expect(celularConIndicativo("3001112233", "Lima")).toBe("3001112233");
+  });
+});
+
+describe("última actividad de los comentarios (creación o edición)", () => {
+  it("toma la fecha más reciente entre creación y edición, e indica si fue una edición", () => {
+    expect(ultimaActividad([])).toBeNull();
+    const cs = [
+      { fecha: "2026-10-20T10:00:00.000Z", editadoEn: "2026-10-28T09:00:00.000Z" }, // antiguo, editado hace poco
+      { fecha: "2026-10-25T10:00:00.000Z", editadoEn: null },
+    ];
+    expect(ultimaActividad(cs)).toEqual({ indice: 0, ms: Date.parse("2026-10-28T09:00:00.000Z"), editado: true });
+    expect(ultimaActividad([cs[1]])).toEqual({ indice: 0, ms: Date.parse("2026-10-25T10:00:00.000Z"), editado: false });
+    expect(ultimaActividad([{ fecha: "2026-10-25T10:00:00.000Z" }])?.editado).toBe(false);
   });
 });

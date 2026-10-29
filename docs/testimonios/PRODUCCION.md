@@ -122,9 +122,9 @@ Sigue [INSTALACION.md](INSTALACION.md):
 ## 7. Avisar al equipo
 
 - **Monitores:** en el menú tienen **Testimonios**, solo con sus ciudades. Ahí pueden:
-  - comentar, y un comentario pasa al participante de Pendiente a Seguimiento;
-  - copiar la lista de pendientes para WhatsApp;
-  - exportar a Excel a los Pendientes y a los de Seguimiento, con su último comentario.
+  - comentar y editar sus propios comentarios. Un pendiente con comentarios sigue Pendiente y lleva la etiqueta amarilla "Con comentarios";
+  - copiar la lista de todos los pendientes para WhatsApp;
+  - exportar a Excel a todos los pendientes, con la columna "Con comentarios" (Sí/No) y su último comentario.
 - **Coordinación:** tiene además **Avance testimonios**, por ciudad, de menor a mayor avance.
 
 ---

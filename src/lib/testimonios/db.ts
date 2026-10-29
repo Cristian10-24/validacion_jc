@@ -45,7 +45,11 @@ export type Respuesta = {
   asignacion?: { por: string; en: Date; motivo?: string }; // manual o descartada (motivo: solo al descartar)
 };
 
-export type Comentario = { _id: ObjectId; participanteId: ObjectId; texto: string; autor: { usuario: string; nombre: string; rol: string }; fecha: Date };
+export type Comentario = {
+  _id: ObjectId; participanteId: ObjectId; texto: string; autor: { usuario: string; nombre: string; rol: string }; fecha: Date;
+  /** Solo si el autor lo editó. No se guarda el texto anterior. */
+  editadoEn?: Date; editadoPor?: { usuario: string; nombre: string };
+};
 
 export type Auditoria = { _id?: ObjectId; accion: string; por: string; fecha: Date; detalle: Record<string, unknown> };
 
