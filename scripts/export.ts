@@ -1,12 +1,12 @@
 // Uso: npm run export [-- archivo.xlsx] [--todos]
-// Excel final para certificados: Nombre completo, Correo y Ciudad.
-// Por defecto solo los VALIDADOS (los corregidos entran cuando su monitor los aprueba).
-// --todos: incluye a todos con su dato más reciente (útil para revisar, no para certificar).
+// Excel final para certificados: pestañas "Datos originales" (todos) y "Datos validados".
+// Por defecto "Datos validados" trae solo los VALIDADOS (los corregidos entran cuando su monitor los aprueba).
+// --todos: "Datos validados" incluye a todos con su dato más reciente (útil para revisar, no para certificar).
 // Es el mismo archivo que descarga la administración desde la web.
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { closeDb, collections, dbHost, dbName } from "@/lib/db";
-import { excelCertificados, filasCertificados, nombreArchivo } from "@/lib/export";
+import { datosCertificados, excelCertificados, nombreArchivo } from "@/lib/export";
 
 async function main() {
   const args = process.argv.slice(2);
@@ -15,9 +15,10 @@ async function main() {
   console.log(`Base de datos: ${dbName()} @ ${dbHost()}`);
 
   const { students } = await collections();
-  const filas = await filasCertificados(students, !todos);
+  const datos = await datosCertificados(students, { soloValidados: !todos });
+  const filas = datos.validados;
   mkdirSync(path.dirname(path.resolve(salida)), { recursive: true });
-  writeFileSync(salida, await excelCertificados(filas));
+  writeFileSync(salida, await excelCertificados(datos));
 
   const porEstado = await students.aggregate<{ _id: string; n: number }>([{ $group: { _id: "$estado", n: { $sum: 1 } } }]).toArray();
   const e = Object.fromEntries(porEstado.map((x) => [x._id, x.n]));

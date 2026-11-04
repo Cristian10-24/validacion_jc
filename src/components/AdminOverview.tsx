@@ -89,7 +89,7 @@ export default function AdminOverview({ user }: { user: SessionUser }) {
         <section className={s.final}>
           <div className={s.finalTitle}>Lista final para certificados</div>
           <div className={s.finalText}>
-            Excel con nombre completo, correo y ciudad de los <b>{t?.validado ?? "–"} validados</b>.
+            Excel con dos pestañas: los datos originales de todos y los datos de los <b>{t?.validado ?? "–"} validados</b>, cruzables por ID.
             {t && t.corregido > 0 && <> Los {t.corregido} corregidos entran cuando su monitor los apruebe.</>}
           </div>
           <div style={{ flex: 1 }} />

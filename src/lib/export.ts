@@ -2,32 +2,67 @@ import ExcelJS from "exceljs";
 import type { Collection } from "mongodb";
 import type { Student } from "./types";
 
-// Excel final para certificados: Nombre completo, Correo (el corregido/aprobado) y Ciudad.
-// Lo usan el botón de la administración y el script `npm run export`.
+// Excel final para certificados, con dos pestañas cruzables por ID (documento):
+//  - "Datos originales": todos los estudiantes con el nombre y correo tal como llegaron en la carga.
+//  - "Datos validados": solo los validados, con su nombre y correo definitivos.
+// Lo usan el botón de la administración y el script `npm run export`. Solo lectura.
 
-export type FilaCertificado = { nombre: string; correo: string; ciudad: string };
+export type FilaOriginal = { id: string; nombre: string; email: string; ciudad: string };
+export type FilaValidada = { id: string; nombre: string; ciudad: string; correo: string };
+export type DatosCertificados = { originales: FilaOriginal[]; validados: FilaValidada[] };
 
-/** soloValidados=true: la lista para certificar. false: todos con su dato más reciente (para revisar). */
-export async function filasCertificados(students: Collection<Student>, soloValidados = true): Promise<FilaCertificado[]> {
+const porCiudadYNombre = (a: { ciudad: string; nombre: string }, b: { ciudad: string; nombre: string }) =>
+  a.ciudad.localeCompare(b.ciudad, "es") || a.nombre.localeCompare(b.nombre, "es");
+
+/**
+ * soloValidados=false: la pestaña "Datos validados" incluye a todos con su dato más reciente (para revisar, no para certificar).
+ * ciudad: si viene, ambas pestañas se limitan a esa ciudad.
+ */
+export async function datosCertificados(students: Collection<Student>, opciones: { soloValidados?: boolean; ciudad?: string } = {}): Promise<DatosCertificados> {
+  const { soloValidados = true, ciudad } = opciones;
   const docs = await students
-    .find(soloValidados ? { estado: "validado" } : {}, { projection: { nombre: 1, correo: 1, ciudad: 1, nombrePropuesto: 1, correoPropuesto: 1 } })
+    .find(ciudad ? { ciudad } : {}, {
+      projection: { documento: 1, ciudad: 1, estado: 1, nombre: 1, correo: 1, nombreOriginal: 1, correoOriginal: 1, nombrePropuesto: 1, correoPropuesto: 1 },
+    })
     .toArray();
-  return docs
-    .map((s) => ({ nombre: s.nombrePropuesto ?? s.nombre, correo: s.correoPropuesto ?? s.correo, ciudad: s.ciudad }))
-    .sort((a, b) => a.ciudad.localeCompare(b.ciudad, "es") || a.nombre.localeCompare(b.nombre, "es"));
+
+  const originales = docs
+    .map((s) => ({ id: s.documento, nombre: s.nombreOriginal ?? "", email: s.correoOriginal ?? "", ciudad: s.ciudad }))
+    .sort(porCiudadYNombre);
+  const validados = docs
+    .filter((s) => !soloValidados || s.estado === "validado")
+    .map((s) => ({ id: s.documento, nombre: s.nombrePropuesto ?? s.nombre, ciudad: s.ciudad, correo: s.correoPropuesto ?? s.correo }))
+    .sort(porCiudadYNombre);
+  return { originales, validados };
 }
 
-export async function excelCertificados(filas: FilaCertificado[]): Promise<Buffer> {
+export async function excelCertificados({ originales, validados }: DatosCertificados): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet("Certificados");
-  ws.columns = [
+
+  const wsO = wb.addWorksheet("Datos originales");
+  wsO.columns = [
+    { header: "ID", key: "id", width: 18 },
     { header: "Nombre completo", key: "nombre", width: 42 },
-    { header: "Correo", key: "correo", width: 40 },
+    { header: "Email", key: "email", width: 40 },
     { header: "Ciudad", key: "ciudad", width: 22 },
   ];
-  ws.getRow(1).font = { bold: true };
-  ws.views = [{ state: "frozen", ySplit: 1 }];
-  ws.addRows(filas);
+  wsO.addRows(originales);
+
+  const wsV = wb.addWorksheet("Datos validados");
+  wsV.columns = [
+    { header: "ID", key: "id", width: 18 },
+    { header: "Nombre completo validado", key: "nombre", width: 42 },
+    { header: "Ciudad", key: "ciudad", width: 22 },
+    { header: "Correo nuevo", key: "correo", width: 40 },
+  ];
+  wsV.addRows(validados);
+
+  for (const ws of [wsO, wsV]) {
+    ws.getRow(1).font = { bold: true };
+    ws.views = [{ state: "frozen", ySplit: 1 }];
+    // El ID como texto: Excel no le quita ceros a la izquierda ni lo pasa a notación científica.
+    ws.getColumn("id").numFmt = "@";
+  }
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
 

@@ -57,7 +57,7 @@ const soloAdmin: [string, () => Promise<Response>][] = [
 // Rutas de coordinación que el monitor NO puede usar.
 const coordinacion: [string, () => Promise<Response>][] = [
   ["ver el resumen", async () => (await import("@/app/api/admin/resumen/route")).GET()],
-  ["descargar el Excel final", async () => (await import("@/app/api/admin/exportar/route")).GET()],
+  ["descargar el Excel final", async () => (await import("@/app/api/admin/exportar/route")).GET(new Request("http://localhost/api/admin/exportar"))],
   ["ver el historial", async () => (await import("@/app/api/monitor/estudiantes/[id]/route")).GET(new Request("http://localhost/x"), ctx)],
 ];
 
