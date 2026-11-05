@@ -78,6 +78,11 @@ describe("matriz de permisos", () => {
     testimonios_sin_duenio: [false, false, true],
     testimonios_exportar_pendientes: [true, true, true],
     testimonios_resumen: [false, true, true],
+    // Encuesta final: mismos roles que su equivalente en testimonios
+    encuesta_ver: [true, true, true],
+    encuesta_comentar: [true, true, true],
+    encuesta_resumen: [false, true, true],
+    encuesta_sin_coincidencia: [false, false, true],
   };
   for (const [permiso, esperado] of Object.entries(tabla))
     it(permiso, () => expect(ROLES.map((r) => puede(r, permiso as Permiso))).toEqual(esperado));

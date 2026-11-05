@@ -23,13 +23,22 @@ export type Permiso =
   | "testimonios_subir_lista"
   | "testimonios_sin_duenio"   // ver, asignar y descartar respuestas sin dueño
   | "testimonios_exportar_pendientes" // Excel de pendientes: monitor solo sus ciudades
-  | "testimonios_resumen";            // avance por ciudad (coordinación y admin)
+  | "testimonios_resumen"             // avance por ciudad (coordinación y admin)
+  // Módulo "Encuesta final" (usa la lista de participantes de testimonios; mismos roles que su equivalente)
+  | "encuesta_ver"                    // monitor: sus ciudades; coordinación y admin: todas
+  | "encuesta_comentar"
+  | "encuesta_resumen"                // avance por ciudad (coordinación y admin)
+  | "encuesta_sin_coincidencia";      // respuestas que no coinciden con ningún participante (admin)
+
+const ENCUESTA_MONITOR: readonly Permiso[] = ["encuesta_ver", "encuesta_comentar"];
 
 const PERMISOS: Record<RolUsuario, readonly Permiso[]> = {
-  monitor: ["testimonios_ver", "testimonios_comentar", "testimonios_exportar_pendientes"],
-  coordinador: ["ver_todas_las_ciudades", "ver_resumen", "descargar_excel", "ver_historial", "testimonios_ver", "testimonios_comentar", "testimonios_exportar_pendientes", "testimonios_resumen"],
+  monitor: ["testimonios_ver", "testimonios_comentar", "testimonios_exportar_pendientes", ...ENCUESTA_MONITOR],
+  coordinador: ["ver_todas_las_ciudades", "ver_resumen", "descargar_excel", "ver_historial", "testimonios_ver", "testimonios_comentar", "testimonios_exportar_pendientes", "testimonios_resumen",
+    ...ENCUESTA_MONITOR, "encuesta_resumen"],
   admin: ["ver_todas_las_ciudades", "ver_resumen", "descargar_excel", "ver_historial", "subir_lista", "gestionar_usuarios", "editar_todo", "exportar_pendientes",
-    "testimonios_ver", "testimonios_comentar", "testimonios_subir_lista", "testimonios_sin_duenio", "testimonios_exportar_pendientes", "testimonios_resumen"],
+    "testimonios_ver", "testimonios_comentar", "testimonios_subir_lista", "testimonios_sin_duenio", "testimonios_exportar_pendientes", "testimonios_resumen",
+    ...ENCUESTA_MONITOR, "encuesta_resumen", "encuesta_sin_coincidencia"],
 };
 
 export function puede(rol: string | undefined, permiso: Permiso): boolean {

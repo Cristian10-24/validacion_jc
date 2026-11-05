@@ -4,7 +4,8 @@ import type { SessionUser } from "@/lib/auth";
 import { puede, ROL_TXT, type Permiso } from "@/lib/permisos";
 import s from "./AppShell.module.css";
 
-export type Seccion = "resumen" | "estudiantes" | "importar" | "usuarios" | "testimonios" | "testimonios_resumen" | "testimonios_lista" | "testimonios_sin_duenio";
+export type Seccion = "resumen" | "estudiantes" | "importar" | "usuarios" | "testimonios" | "testimonios_resumen" | "testimonios_lista" | "testimonios_sin_duenio"
+  | "encuesta" | "encuesta_resumen" | "encuesta_sin_coincidencia";
 
 // Cada sección aparece solo si el rol tiene el permiso (el servidor lo vuelve a validar).
 const NAV: { key: Seccion; label: string; href: string; permiso?: Permiso }[] = [
@@ -17,6 +18,10 @@ const NAV: { key: Seccion; label: string; href: string; permiso?: Permiso }[] = 
   // Módulo de testimonios (separado de Estudiantes)
   { key: "testimonios_lista", label: "Lista testimonios", href: "/admin/testimonios/lista", permiso: "testimonios_subir_lista" },
   { key: "testimonios_sin_duenio", label: "Sin dueño", href: "/admin/testimonios/sin-duenio", permiso: "testimonios_sin_duenio" },
+  // Módulo "Encuesta final" (misma lista de participantes que testimonios)
+  { key: "encuesta", label: "Encuesta final", href: "/encuesta", permiso: "encuesta_ver" },
+  { key: "encuesta_resumen", label: "Avance encuesta", href: "/encuesta/resumen", permiso: "encuesta_resumen" },
+  { key: "encuesta_sin_coincidencia", label: "Encuesta sin coincidencia", href: "/admin/encuesta/sin-coincidencia", permiso: "encuesta_sin_coincidencia" },
 ];
 
 export function iniciales(nombre: string): string {
@@ -25,7 +30,7 @@ export function iniciales(nombre: string): string {
 
 export default function AppShell({ user, active, children }: { user: SessionUser; active: Seccion; children: React.ReactNode }) {
   const nav = user.rol === "monitor"
-    ? [{ key: "estudiantes" as Seccion, label: "Mi grupo", href: "/monitor" }, { key: "testimonios" as Seccion, label: "Testimonios", href: "/testimonios" }]
+    ? [{ key: "estudiantes" as Seccion, label: "Mi grupo", href: "/monitor" }, { key: "testimonios" as Seccion, label: "Testimonios", href: "/testimonios" }, { key: "encuesta" as Seccion, label: "Encuesta final", href: "/encuesta" }]
     : NAV.filter((n) => !n.permiso || puede(user.rol, n.permiso));
 
   async function salir() {
