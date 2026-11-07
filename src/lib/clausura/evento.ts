@@ -7,6 +7,7 @@ import { Formulario, ID, type Respuestas } from "./formulario/esquema";
 import { preguntasDe } from "./formulario/motor";
 import { aplicarProyecto, MODOS_PROYECTO, type ModoProyecto } from "./formulario/proyecto";
 import { reemplazar, resolverTextos, type Variables } from "./formulario/variables";
+import { sinMarcadores, textoQuedan } from "./presentacion";
 
 const fold = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[.,]/g, "").replace(/\s+/g, " ").trim();
 export const mismaCiudad = (a: string, b: string) => fold(a) === fold(b);
@@ -166,7 +167,7 @@ export function mapaDe(e: Pick<Evento, "mapaUrl" | "lugar" | "direccion" | "nomb
 
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 /** Intl usa espacios especiales en "a. m."; se cambian por espacios normales (para textos y el calendario). */
-const espacios = (t: string) => t.replace(/[  ]/g, " ");
+const espacios = (t: string) => t.replace(/[\u00a0\u202f]/g, " ");
 
 export const horaDe = (d: Date, tz: string) => espacios(d.toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: tz }));
 /** "sábado 14 de noviembre" (en minúscula, para usar dentro de una frase). */
@@ -222,7 +223,44 @@ export function eventoVista(e: Evento, ahora = new Date()) {
     preguntaAsistencia: e.preguntaAsistencia, opcionesAsisten: e.opcionesAsisten ?? [],
     calendario: { ics: `/api/clausura/calendario/${e.slug}`, google: enlaceGoogle(e) },
     proyecto: modoProyecto(e),
+    portada: presentacionDe(e, ahora),
     formulario: formularioDe(e, formularioActivo(e, e.formulario)),
   };
 }
 export type EventoVista = ReturnType<typeof eventoVista>;
+
+/**
+ * Textos de la portada pública (solo presentación, derivados de los datos del evento). Todo lo que tenga un
+ * marcador "[…]" sale como null y la línea no se muestra.
+ */
+export function presentacionDe(e: Evento, ahora = new Date()) {
+  const tz = e.zonaHoraria;
+  const tipo = TIPOS_EVENTO[tipoDe(e)];
+  const anio = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric" }).format(e.inicio);
+  const mes = espacios(e.inicio.toLocaleDateString("es-CO", { month: "short", timeZone: tz })).replace(".", "");
+  const dia = e.inicio.toLocaleDateString("es-CO", { day: "numeric", timeZone: tz });
+  const semana = cap(e.inicio.toLocaleDateString("es-CO", { weekday: "long", timeZone: tz }));
+  return {
+    /** "EXPOFERIA Y CLAUSURA" · "CLAUSURA" */
+    etiquetaTipo: tipo.nombre.toUpperCase(),
+    /** "CLAUSURA · CARTAGENA" */
+    etiquetaCiudad: sinMarcadores(`${tipo.nombre} · ${e.nombreVisible}`.toUpperCase()),
+    /** "Clausura Jóvenes creaTIvos 2026 – Cartagena" */
+    invitacion: sinMarcadores(`${tipo.nombre} Jóvenes creaTIvos ${anio} – ${e.nombreVisible}`),
+    /** "3:00 p. m. – 5:00 p. m." (sin la zona) */
+    horaRango: sinMarcadores(`${horaDe(e.inicio, tz)}${e.fin ? ` – ${horaDe(e.fin, tz)}` : ""}`),
+    horaInicio: horaDe(e.inicio, tz),
+    /** "Hora de Colombia" */
+    zonaTexto: cap(e.zonaHorariaTexto || ZONAS[tz] || tz),
+    /** "Jueves 19 nov" */
+    diaCorto: `${semana} ${dia} ${mes}`,
+    /** "Lunes 9 de noviembre" (fecha límite, en la zona del evento) */
+    limiteDia: e.fechaLimite ? cap(diaDe(e.fechaLimite, tz)) : null,
+    /** "Quedan 3 días" · "Último día" · null si no hay fecha límite o ya cerró */
+    quedan: textoQuedan(e.fechaLimite, tz, ahora),
+    lugar: sinMarcadores(e.lugar),
+    direccion: sinMarcadores(e.direccion),
+    zona: tz,
+  };
+}
+export type PresentacionEvento = ReturnType<typeof presentacionDe>;

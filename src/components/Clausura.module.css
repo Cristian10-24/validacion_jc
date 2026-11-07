@@ -85,3 +85,13 @@
   .mainPortada > section:last-child { position: sticky; top: 24px; }
   .evInfo { max-width: 560px; }
 }
+
+/* Pantallas del formulario con el estilo nuevo (los tokens de color los pone ClausuraPortada.module.css .raiz). */
+.flujo :global(.btn-primary) { box-shadow: 0 6px 0 var(--cl-naranja-osc); }
+.flujo :global(.btn-primary):disabled { box-shadow: none; }
+.flujo :global(.input) { border-color: var(--cl-input); background: #fffcfa; }
+.flujo :global(.check.is-on) { background: #fff4ee; }
+.eventoMini { margin-top: 14px; font: 600 14px var(--font); color: var(--muted); }
+@media (min-width: 960px) {
+  .flujo { background: var(--cl-fondo); }
+}

@@ -9,15 +9,18 @@ import { camino, validarRespuestas } from "@/lib/clausura/formulario/motor";
 import { GENEROS, validarTelefono, type Genero } from "@/lib/clausura/contacto";
 import { paisDeCiudad } from "@/lib/testimonios/celular";
 import { checkEmail, domainOf, emailError } from "@/lib/validation/email";
+import { preguntasDe } from "@/lib/clausura/formulario/motor";
+import { textoRespuesta } from "@/lib/clausura/formulario/mostrar";
+import type { PreguntaFrecuente } from "@/lib/clausura/presentacion";
 import ClausuraTexto from "./ClausuraTexto";
+import { EstadoEnviada, EstadoOtraCiudad, EstadoPronto, EstadoVencida, PaginaCiudad, PaginaGeneral, estilosPortada as pp, type EventoPortada, type Ingreso } from "./ClausuraPortada";
 import s from "./StudentFlow.module.css";
 import c from "./Clausura.module.css"; // después de StudentFlow: sus reglas ganan
 
 // Portal de clausura del estudiante: portada del evento → documento → contacto → secciones → resumen → éxito.
 // Todo lo importante lo decide el servidor (camino, validación, ciudad); aquí solo se usa el motor para la experiencia.
 
-type Pantalla = "portada" | "cargando" | "contacto" | "seccion" | "resumen" | "exito" | "ver" | "pronto" | "noEncontrado" | "cerrado";
-export type EventoLista = { slug: string; nombreVisible: string; dia: string };
+type Pantalla = "portada" | "cargando" | "contacto" | "seccion" | "resumen" | "exito" | "ver" | "pronto" | "noEncontrado" | "cerrado" | "otraCiudad";
 
 const RED_NET = "No pudimos conectarnos. Revisa tu internet e intenta otra vez.";
 const SESION = "Pasó mucho tiempo sin actividad. Escribe tu documento otra vez para seguir donde ibas.";
@@ -25,41 +28,7 @@ const SESION = "Pasó mucho tiempo sin actividad. Escribe tu documento otra vez 
 function Icono({ d }: { d: string }) {
   return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d={d} /></svg>;
 }
-const I_CAL = "M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z";
-const I_HORA = "M12 7v5l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z";
-const I_LUGAR = "M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21zM12 12a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z";
 const I_ATRAS = "M15 5l-7 7 7 7";
-
-function EventoInfo({ ev, conDescripcion = true }: { ev: EventoVista; conDescripcion?: boolean }) {
-  return (
-    <div className={c.evInfo}>
-      {ev.imagen && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={ev.imagen} alt="" className={c.evImg} />
-      )}
-      <div className={c.evRows}>
-        <div className={c.evRow}><span className={c.evIcon}><Icono d={I_CAL} /></span><span><b>{ev.dia}</b></span></div>
-        <div className={c.evRow}><span className={c.evIcon}><Icono d={I_HORA} /></span><span>{ev.llegada ? <><b>Llegada: {ev.llegada}</b><br />Evento: {ev.hora}</> : ev.hora}</span></div>
-        <div className={c.evRow}><span className={c.evIcon}><Icono d={I_LUGAR} /></span>
-          <span><b>{ev.lugar}</b><br />{ev.direccion} · <a href={ev.mapa} target="_blank" rel="noreferrer">Ver en el mapa</a></span>
-        </div>
-      </div>
-      {conDescripcion && ev.descripcion && <ClausuraTexto texto={ev.descripcion} className={c.rico} />}
-    </div>
-  );
-}
-
-/** "Agregar a mi calendario" (.ics, sirve en el celular y en Outlook) y "Agregar a Google Calendar". */
-function Calendario({ ev }: { ev: EventoVista }) {
-  return (
-    <div className={c.calendario}>
-      <a className="btn btn-primary" href={ev.calendario.ics} download={`${ev.slug}.ics`}>
-        <Icono d={I_CAL} />Agregar a mi calendario
-      </a>
-      <a className={c.google} href={ev.calendario.google} target="_blank" rel="noreferrer">Agregar a Google Calendar</a>
-    </div>
-  );
-}
 
 function Opcion({ on, redonda, error, onClick, children }: { on: boolean; redonda?: boolean; error?: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
@@ -184,9 +153,17 @@ function contactoInicial(v: VistaEstudiante): FormContacto {
   };
 }
 
-export default function ClausuraFlujo({ evento, eventos = [], privacyUrl }: { evento: EventoVista | null; eventos?: EventoLista[]; privacyUrl: string }) {
+/** "Viernes 6 nov · 4:35 p. m." en la zona del evento. */
+function fechaEnvio(iso: string | null, tz: string): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  const dia = d.toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "short", timeZone: tz }).replace(",", "").replace(".", "").replace(" de ", " ");
+  const hora = d.toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: tz });
+  return `${dia.charAt(0).toUpperCase()}${dia.slice(1)} · ${hora}`.replace(/[\u00a0\u202f]/g, " ");
+}
+
+export default function ClausuraFlujo({ evento, eventos = [], faq = [], privacyUrl }: { evento: EventoVista | null; eventos?: EventoPortada[]; faq?: PreguntaFrecuente[]; privacyUrl: string }) {
   const [pantalla, setPantalla] = useState<Pantalla>("portada");
-  const [cargandoTxt, setCargandoTxt] = useState("");
   const [vista, setVista] = useState<VistaEstudiante | null>(null);
   const [doc, setDoc] = useState("");
   const [docErr, setDocErr] = useState("");
@@ -215,6 +192,8 @@ export default function ClausuraFlujo({ evento, eventos = [], privacyUrl }: { ev
     setVista(v);
     setResp(v.respuesta.respuestas);
     setFc(contactoInicial(v));
+    // Está en la página de otra ciudad: se le muestra su evento (con botón para ir) en vez de llevarlo sin avisar.
+    if (evento && v.evento.slug !== evento.slug) return ir("otraCiudad");
     if (window.location.pathname !== `/clausura/${v.evento.slug}`) window.history.replaceState(null, "", `/clausura/${v.evento.slug}`);
     document.title = `${v.evento.titulo} · ${v.evento.nombreVisible}`;
     const r = v.respuesta;
@@ -262,7 +241,6 @@ export default function ClausuraFlujo({ evento, eventos = [], privacyUrl }: { ev
     const d = doc.replace(/[^0-9a-zA-Z]/g, "");
     if (!d) return setDocErr("Escribe tu número de documento");
     if (d.length < 3) return setDocErr("Revisa el número: parece incompleto");
-    setCargandoTxt("Buscando tu información…");
     setPantalla("cargando");
     const r = await api("ingresar", "POST", { documento: d });
     if (!r) { setPantalla("portada"); return setDocErr(RED_NET); }
@@ -380,33 +358,60 @@ export default function ClausuraFlujo({ evento, eventos = [], privacyUrl }: { ev
   // ----- Textos de la columna izquierda -----
   const nombre = (vista?.estudiante.nombre ?? "").split(" ")[0];
   const editando = !!vista?.respuesta.editando;
-  const textos: Record<Pantalla, [string, string, string, string?]> = {
-    portada: ev ? [ev.kicker, ev.titulo, ev.nombreVisible] : [eventos.length ? "Clausura 2026" : "Clausura", "Confirma tu asistencia a la clausura", "Escribe tu documento y te mostramos el evento de tu ciudad."],
-    cargando: ev ? [ev.kicker, ev.titulo, ev.nombreVisible] : ["Clausura", "Un momento…", ""],
+  // ----- Portada y estados (diseño nuevo): misma lógica, otra presentación -----
+  const ingreso: Ingreso = {
+    doc, setDoc: (v) => { setDoc(v); setDocErr(""); if (pantalla === "noEncontrado") setPantalla("portada"); },
+    error: docErr, cargando: pantalla === "cargando", noEncontrado: pantalla === "noEncontrado",
+    enviar: ingresar, reintentar: () => { setDocErr(""); setPantalla("portada"); },
+  };
+  const botonSalir = vista ? <button type="button" className={pp.salir} onClick={salir}>No soy {nombre}</button> : undefined;
+  const sinForm = <T extends EventoVista>(e: T): EventoPortada => { const { formulario: _f, ...resto } = e; return resto; };
+
+  if (pantalla === "portada" || pantalla === "cargando" || pantalla === "noEncontrado") {
+    if (evento && !evento.aceptaRespuestas) return <EstadoVencida ev={sinForm(evento)} privacyUrl={privacyUrl} consulta={ingreso} />;
+    return evento
+      ? <PaginaCiudad ev={sinForm(evento)} ingreso={ingreso} privacyUrl={privacyUrl} />
+      : <PaginaGeneral eventos={eventos} faq={faq} ingreso={ingreso} privacyUrl={privacyUrl} />;
+  }
+  if (pantalla === "otraCiudad" && vista && evento) {
+    return <EstadoOtraCiudad pagina={sinForm(evento)} suyo={sinForm(vista.evento)} nombre={nombre} privacyUrl={privacyUrl} salir={botonSalir} />;
+  }
+  if ((pantalla === "ver" || pantalla === "exito") && vista && ev && form) {
+    const pa = ev.preguntaAsistencia ? preguntasDe(form).get(ev.preguntaAsistencia) : undefined;
+    const r = vista.respuesta.respuestas;
+    const asistencia = pa ? textoRespuesta(pa, r[pa.id], r[claveOtro(pa.id)]) || null : null;
+    const editar = vista.puedeResponder ? (
+      <div className={pp.notaSol}>
+        {vista.respuesta.reabierta ? "Tu respuesta fue reabierta: puedes cambiarla, pero debes volver a enviarla." : `Puedes editarla mientras las confirmaciones sigan abiertas${ev.fechaLimite ? ` (hasta el ${ev.fechaLimite})` : ""}.`}
+        <div style={{ marginTop: 10 }}><button type="button" className={pp.botonSecundario} onClick={() => edicion("empezar")} disabled={enviando}>Editar mis respuestas</button></div>
+      </div>
+    ) : undefined;
+    return (
+      <EstadoEnviada ev={sinForm(ev)} vista={vista} recien={pantalla === "exito"} asistencia={asistencia}
+        enviadaTexto={fechaEnvio(vista.respuesta.editadaEn ?? vista.respuesta.enviadaEn, ev.portada.zona)}
+        secciones={respuestasLegibles(form, resp)} salir={botonSalir} privacyUrl={privacyUrl} editar={editar} />
+    );
+  }
+  if (pantalla === "cerrado" && ev) return <EstadoVencida ev={sinForm(ev)} privacyUrl={privacyUrl} salir={botonSalir} />;
+  if (pantalla === "pronto") return <EstadoPronto privacyUrl={privacyUrl} volver={salir} />;
+
+  // ----- Pantallas del formulario (contacto, secciones y resumen) -----
+  const textos: Partial<Record<Pantalla, [string, string, string]>> = {
     contacto: ["Tus datos de contacto", `Hola, ${nombre}.`, "Antes de empezar, confirma cómo podemos escribirte."],
     seccion: [ev?.kicker ?? "", paso?.seccion.titulo ?? "", ""],
     resumen: [editando ? "Editando tus respuestas" : "Último paso", "Revisa tus respuestas", editando ? "Tus cambios se guardan cuando pulses Enviar." : "Si algo no está bien, toca Editar en esa parte. Cuando esté todo, pulsa Enviar."],
-    exito: vista?.asistira
-      ? ["Todo listo", `¡Listo, ${nombre}! Te esperamos en la ${ev?.fraseTipo ?? "clausura"}`, "Guardamos tus respuestas. Agrega el evento a tu calendario para no olvidarlo."]
-      : ["Todo listo", `¡Gracias, ${nombre}! Recibimos tus respuestas`, "Ya puedes cerrar esta página."],
-    ver: ["Ya respondiste", "Estas son tus respuestas", vista?.respuesta.reabierta && vista.puedeResponder
-      ? "Tu respuesta fue reabierta: puedes cambiarla, pero debes volver a enviarla."
-      : vista?.puedeResponder ? `Puedes editarlas mientras el evento siga abierto${ev?.fechaLimite ? ` (hasta el ${ev.fechaLimite})` : ""}.` : "Ya no se pueden cambiar. Si necesitas un cambio, escríbele a tu monitor."],
-    pronto: ["Muy pronto", "Pronto publicaremos la información de tu ciudad", "Vuelve a entrar en unos días. Si tienes dudas, escríbele a tu monitor."],
-    noEncontrado: ["Algo no cuadra", "Tu documento no aparece", "Revisa que el número esté bien escrito. Si sigue sin aparecer, escríbele a tu monitor."],
-    cerrado: ["Confirmaciones cerradas", "Este evento ya cerró sus confirmaciones", "Si tienes dudas, escríbele a tu monitor."],
   };
-  const [kicker, titulo, sub] = textos[pantalla];
-  const colorKicker = pantalla === "exito" || pantalla === "ver" ? "var(--green-dark)" : pantalla === "noEncontrado" || pantalla === "cerrado" ? "var(--red-ink)" : "var(--orange-dark)";
+  const [kicker, titulo, sub] = textos[pantalla] ?? ["", "", ""];
+  const colorKicker = "var(--orange-dark)";
   const pasos = ["contacto", ...ids];
   const progreso = pantalla === "contacto" ? 1 : pantalla === "seccion" ? ids.indexOf(seccionId) + 2 : pantalla === "resumen" ? pasos.length + 1 : 0;
   const totalPasos = pasos.length + 1;
-  const puedeAtras = (pantalla === "seccion" || pantalla === "resumen" || pantalla === "noEncontrado") && !enviando;
+  const puedeAtras = (pantalla === "seccion" || pantalla === "resumen") && !enviando;
   const legibles = vista && form ? respuestasLegibles(form, resp) : [];
   const k = vista?.respuesta.contacto;
 
   return (
-    <div className={s.shell}>
+    <div className={`${s.shell} ${pp.raiz} ${c.flujo}`}>
       <i className={`${s.deco} ${s.decoRing}`} aria-hidden />
       <i className={`${s.deco} ${s.decoSun}`} aria-hidden />
       <i className={`${s.deco} ${s.decoSquare}`} aria-hidden />
@@ -420,10 +425,10 @@ export default function ClausuraFlujo({ evento, eventos = [], privacyUrl }: { ev
           <span className={s.divider} />
           <span>¿Problemas? Escríbele a tu monitor</span>
         </div>
-        {vista && <button type="button" className={c.salir} onClick={salir}>No soy {nombre}</button>}
+        {vista && <button type="button" className={pp.salir} onClick={salir}>No soy {nombre}</button>}
       </header>
 
-      <main className={`${s.main} ${pantalla === "portada" ? c.mainPortada : ""}`}>
+      <main className={s.main}>
         <section className={s.intro}>
           {puedeAtras && (
             <button type="button" className={s.back} onClick={atras}><Icono d={I_ATRAS} />Atrás</button>
@@ -437,31 +442,10 @@ export default function ClausuraFlujo({ evento, eventos = [], privacyUrl }: { ev
           <div className={`kicker ${s.kicker}`} style={{ color: colorKicker }}>{kicker}</div>
           <h1 className={s.title}>{titulo}</h1>
           {pantalla === "seccion" && paso?.seccion.descripcion ? <ClausuraTexto texto={paso.seccion.descripcion} className={`${s.sub} ${c.rico}`} /> : sub ? <p className={s.sub}>{sub}</p> : null}
-          {(pantalla === "portada" || pantalla === "cargando") && ev && <EventoInfo ev={ev} />}
-          {pantalla === "portada" && !ev && eventos.length > 0 && (
-            <div className={c.ciudades}>
-              <div className={s.smallLabel}>Eventos publicados</div>
-              {eventos.map((e) => <a key={e.slug} href={`/clausura/${e.slug}`} className={c.ciudad}><b>{e.nombreVisible}</b><span>{e.dia}</span></a>)}
-            </div>
-          )}
+          {ev && <div className={c.eventoMini}>{ev.titulo} · {ev.nombreVisible}</div>}
         </section>
 
         <section className={s.card} aria-live="polite">
-          {pantalla === "portada" && (
-            <form className={s.form} onSubmit={(e) => { e.preventDefault(); ingresar(); }}>
-              {ev && !ev.aceptaRespuestas && <div className="note note-info" style={{ marginBottom: 16 }}><span>Este evento ya cerró sus confirmaciones. Si ya respondiste, entra para ver tus respuestas.</span></div>}
-              <label className="label" htmlFor="doc">Número de documento</label>
-              <input id="doc" className={`input ${s.docInput} ${docErr ? "is-error" : ""}`} value={doc}
-                onChange={(e) => { setDoc(e.target.value); setDocErr(""); }} inputMode="numeric" autoComplete="off" placeholder="Sin puntos ni espacios" />
-              {docErr && <div className="msg-error">{docErr}</div>}
-              <div className={s.grow} />
-              <button type="submit" className="btn btn-primary" style={{ marginTop: 22 }}>{ev?.aceptaRespuestas === false ? "Ver mis respuestas" : "Entrar"}</button>
-              <div className={s.hint}>Es el mismo documento con el que te inscribiste.</div>
-            </form>
-          )}
-
-          {pantalla === "cargando" && <div className={s.loading}><div className="spinner" />{cargandoTxt}</div>}
-
           {pantalla === "contacto" && vista && fc && (
             <div className={s.form}>
               <div className={c.bloqueDato}>
@@ -556,22 +540,14 @@ export default function ClausuraFlujo({ evento, eventos = [], privacyUrl }: { ev
             </div>
           )}
 
-          {(pantalla === "resumen" || pantalla === "ver" || pantalla === "exito") && vista && (
+          {pantalla === "resumen" && vista && (
             <div className={s.form}>
-              {pantalla === "exito" && ev && (
-                <div className={c.exito}>
-                  <div className={c.exitoCheck} aria-hidden><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5.5 12.5l4.2 4.2 8.8-9.2" /></svg></div>
-                  <div className={c.exitoTitulo}>{ev.titulo} · {ev.nombreVisible}</div>
-                  <EventoInfo ev={ev} conDescripcion={false} />
-                </div>
-              )}
-              {(pantalla === "exito" || pantalla === "ver") && ev && vista.asistira && <Calendario ev={ev} />}
-              {pantalla !== "exito" && (
+              {(
                 <>
                   <div className={c.resumenSec}>
                     <div className={c.resumenHead}>
                       <span>Tus datos de contacto</span>
-                      {pantalla === "resumen" && <button type="button" className={`btn-link ${c.cambiar}`} onClick={() => ir("contacto")}>Editar</button>}
+                      <button type="button" className={`btn-link ${c.cambiar}`} onClick={() => ir("contacto")}>Editar</button>
                     </div>
                     <dl className={c.resumenLista}>
                       <dt>Correo</dt><dd>{k?.correoConfirmado ? vista.estudiante.correoOculto : k?.correoNuevoOculto ?? "—"}</dd>
@@ -584,7 +560,7 @@ export default function ClausuraFlujo({ evento, eventos = [], privacyUrl }: { ev
                     <div key={sec.id} className={c.resumenSec}>
                       <div className={c.resumenHead}>
                         <span>{sec.titulo}</span>
-                        {pantalla === "resumen" && <button type="button" className={`btn-link ${c.cambiar}`} onClick={() => ir("seccion", sec.id)}>Editar</button>}
+                        <button type="button" className={`btn-link ${c.cambiar}`} onClick={() => ir("seccion", sec.id)}>Editar</button>
                       </div>
                       <dl className={c.resumenLista}>
                         {sec.preguntas.map((q) => <div key={q.id}><dt>{q.titulo}</dt><dd>{q.texto || <span className={c.sinRespuesta}>Sin responder</span>}</dd></div>)}
@@ -595,37 +571,10 @@ export default function ClausuraFlujo({ evento, eventos = [], privacyUrl }: { ev
               )}
               {errorGeneral && <div className="msg-error">{errorGeneral}</div>}
               <div className={s.grow} />
-              {pantalla === "resumen" && (
-                <div className={s.actions}>
-                  <button type="button" className="btn btn-green" onClick={enviar} disabled={enviando}>{enviando ? <span className="spinner-sm" /> : editando ? "Enviar cambios" : "Enviar mis respuestas"}</button>
-                  {editando && <button type="button" className="btn btn-soft" onClick={() => edicion("cancelar")} disabled={enviando}>Descartar cambios</button>}
-                </div>
-              )}
-              {(pantalla === "ver" || pantalla === "exito") && (
-                <div className={s.actions}>
-                  {pantalla === "exito" && <button type="button" className="btn btn-soft" onClick={() => ir("ver")}>Ver mis respuestas</button>}
-                  {pantalla === "ver" && vista.puedeResponder && <button type="button" className="btn btn-ghost" onClick={() => edicion("empezar")} disabled={enviando}>Editar mis respuestas</button>}
-                </div>
-              )}
-            </div>
-          )}
-
-          {(pantalla === "pronto" || pantalla === "cerrado") && (
-            <div className={s.form}>
-              <div className={`${s.iconBox} ${pantalla === "pronto" ? c.iconoNaranja : s.iconRed}`}><Icono d={I_CAL} /></div>
-              {pantalla === "cerrado" && ev && <EventoInfo ev={ev} conDescripcion={false} />}
-              <div className={s.grow} />
-              <button type="button" className="btn btn-soft" style={{ marginTop: 22 }} onClick={salir}>Volver al inicio</button>
-            </div>
-          )}
-
-          {pantalla === "noEncontrado" && (
-            <div className={s.form}>
-              <div className={`${s.iconBox} ${s.iconRed}`}><Icono d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2" /></div>
-              <div className={s.smallLabel}>Número que escribiste</div>
-              <div className={s.docShown}>{doc}</div>
-              <div className={s.grow} />
-              <button type="button" className="btn btn-primary" style={{ marginTop: 22 }} onClick={() => { setDoc(""); ir("portada"); }}>Intentar con otro número</button>
+              <div className={s.actions}>
+                <button type="button" className="btn btn-primary" onClick={enviar} disabled={enviando}>{enviando ? <span className="spinner-sm" /> : editando ? "Enviar cambios" : "Enviar mis respuestas"}</button>
+                {editando && <button type="button" className="btn btn-soft" onClick={() => edicion("cancelar")} disabled={enviando}>Descartar cambios</button>}
+              </div>
             </div>
           )}
         </section>
