@@ -8,7 +8,7 @@ import { collections } from "./db";
 export const LIMITE_INTENTOS = Number(process.env.RATE_LIMIT_MAX) || 20;
 export const VENTANA_MS = 15 * 60 * 1000;
 
-export type TipoLimite = "buscar" | "login";
+export type TipoLimite = "buscar" | "login" | "clausura";
 
 /** IP del cliente. En Vercel llega en x-real-ip / x-forwarded-for (la primera es la del cliente). */
 export function clientIp(req: Request): string {

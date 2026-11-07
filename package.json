@@ -13,7 +13,9 @@
     "reset-estudiantes": "tsx --env-file=.env.local scripts/reset-estudiantes.ts",
     "cities:fix": "tsx --env-file=.env.local scripts/cities.ts",
     "monitor:add": "tsx --env-file=.env.local scripts/monitor.ts add",
-    "monitor:list": "tsx --env-file=.env.local scripts/monitor.ts list"
+    "monitor:list": "tsx --env-file=.env.local scripts/monitor.ts list",
+    "clausura:evento": "tsx --env-file=.env.local scripts/clausura-evento.ts",
+    "dev:local-clausura": "tsx scripts/clausura-dev-local.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

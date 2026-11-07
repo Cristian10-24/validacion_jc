@@ -1,0 +1,394 @@
+{
+  "$comentario": "Se cita a las 2:30 p. m.; el evento es de 3:00 a 5:00 p. m. Fecha límite (por ahora la misma de Cali): lunes 9 de noviembre, 11:59 p. m. (hora de Colombia).",
+  "slug": "cartagena-2026",
+  "tipo": "clausura",
+  "titulo": "Clausura 2026",
+  "kicker": "CLAUSURA 2026",
+  "nombreVisible": "Cartagena",
+  "ciudades": [
+    "Cartagena"
+  ],
+  "descripcion": "",
+  "lugar": "Universidad Libertadores",
+  "direccion": "Cl. 31 #19 - 51, Pie de la Popa, Cartagena de Indias, Bolívar",
+  "inicio": "2026-11-19T15:00:00-05:00",
+  "fin": "2026-11-19T17:00:00-05:00",
+  "citacion": "2026-11-19T14:30:00-05:00",
+  "imagen": "/clausura/clausura-2026.jpg",
+  "fechaLimite": "2026-11-09T23:59:00-05:00",
+  "mapaUrl": null,
+  "zonaHoraria": "America/Bogota",
+  "estado": "borrador",
+  "permitirEdicion": false,
+  "preguntaAsistencia": "q_asistencia",
+  "opcionesAsisten": [
+    "si",
+    "inconvenientes"
+  ],
+  "proyecto": "no",
+  "formulario": {
+    "secciones": [
+      {
+        "id": "s_asistencia",
+        "titulo": "Asistencia",
+        "items": [
+          {
+            "id": "q_asistencia",
+            "tipo": "unica",
+            "titulo": "Asistiré a la {evento} el {fecha} a las {hora}",
+            "obligatoria": true,
+            "opciones": [
+              {
+                "id": "si",
+                "texto": "¡SÍ, no me lo perdería por nada del mundo!",
+                "irA": {
+                  "seccion": "s_acompanante"
+                }
+              },
+              {
+                "id": "inconvenientes",
+                "texto": "Quiero asistir, pero tengo inconvenientes",
+                "irA": {
+                  "seccion": "s_inconvenientes"
+                }
+              },
+              {
+                "id": "no",
+                "texto": "NO, ya es seguro que no estaré…",
+                "irA": {
+                  "seccion": "s_no_asiste"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s_inconvenientes",
+        "titulo": "Inconvenientes",
+        "despues": {
+          "seccion": "s_acompanante"
+        },
+        "items": [
+          {
+            "id": "q_inconveniente",
+            "tipo": "parrafo",
+            "titulo": "Cuéntanos qué inconveniente tienes para asistir. Queremos ver si podemos ayudarte.",
+            "obligatoria": true
+          }
+        ]
+      },
+      {
+        "id": "s_no_asiste",
+        "titulo": "No asistiré",
+        "despues": {
+          "seccion": "s_planes"
+        },
+        "items": [
+          {
+            "id": "info_extranaremos",
+            "tipo": "info",
+            "texto": "Te extrañaremos."
+          },
+          {
+            "id": "q_motivo_no_asiste",
+            "tipo": "parrafo",
+            "titulo": "Por favor cuéntanos por qué no estarás en la {evento}.",
+            "obligatoria": true
+          }
+        ]
+      },
+      {
+        "id": "s_acompanante",
+        "titulo": "Acompañante",
+        "items": [
+          {
+            "id": "info_acompanante",
+            "tipo": "info",
+            "texto": "Para la {evento} puedes llevar solo un acompañante. Llevar a un acompañante es algo que valoramos profundamente. Sabemos que compartir momentos especiales con alguien a tu lado no solo enriquece la experiencia, sino que también crea recuerdos que perduran."
+          },
+          {
+            "id": "q_acompanante",
+            "tipo": "sino",
+            "titulo": "¿Llevarás un acompañante?",
+            "obligatoria": true
+          },
+          {
+            "id": "q_acompanante_nombre",
+            "tipo": "texto",
+            "formato": "nombre",
+            "titulo": "Nombre completo de tu acompañante",
+            "obligatoria": true,
+            "mostrarSi": {
+              "pregunta": "q_acompanante",
+              "op": "=",
+              "valor": "si"
+            }
+          },
+          {
+            "id": "q_acompanante_documento",
+            "tipo": "texto",
+            "formato": "documento",
+            "titulo": "Número de documento de tu acompañante",
+            "obligatoria": true,
+            "mostrarSi": {
+              "pregunta": "q_acompanante",
+              "op": "=",
+              "valor": "si"
+            }
+          },
+          {
+            "id": "q_acompanante_parentesco",
+            "tipo": "desplegable",
+            "titulo": "Parentesco",
+            "obligatoria": true,
+            "mostrarSi": {
+              "pregunta": "q_acompanante",
+              "op": "=",
+              "valor": "si"
+            },
+            "opciones": [
+              {
+                "id": "mama",
+                "texto": "Mamá"
+              },
+              {
+                "id": "papa",
+                "texto": "Papá"
+              },
+              {
+                "id": "hermano",
+                "texto": "Hermano/a"
+              },
+              {
+                "id": "abuelo",
+                "texto": "Abuelo/a"
+              },
+              {
+                "id": "tio",
+                "texto": "Tío/a"
+              },
+              {
+                "id": "primo",
+                "texto": "Primo/a"
+              },
+              {
+                "id": "pareja",
+                "texto": "Pareja"
+              },
+              {
+                "id": "amigo",
+                "texto": "Amigo/a"
+              },
+              {
+                "id": "otro",
+                "texto": "Otro",
+                "otro": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s_proyecto",
+        "titulo": "Tu proyecto",
+        "proyecto": true,
+        "items": [
+          {
+            "id": "info_proyecto",
+            "tipo": "info",
+            "texto": "En la EXPOFeria presentarás tu proyecto final."
+          },
+          {
+            "id": "q_proyecto_nombre",
+            "tipo": "texto",
+            "titulo": "Nombre de tu proyecto",
+            "obligatoria": true
+          },
+          {
+            "id": "q_proyecto_enlace",
+            "tipo": "texto",
+            "formato": "url",
+            "titulo": "Enlace de tu proyecto, si lo tienes"
+          }
+        ]
+      },
+      {
+        "id": "s_planes",
+        "titulo": "Tus planes personales para 2027",
+        "items": [
+          {
+            "id": "q_plan_estudios",
+            "tipo": "unica",
+            "titulo": "Pensando en el primer semestre de 2027, ¿cuál de las siguientes opciones describe mejor lo que planeas hacer con tus estudios?",
+            "obligatoria": true,
+            "opciones": [
+              {
+                "id": "colegio",
+                "texto": "Continuar estudiando en el colegio."
+              },
+              {
+                "id": "tecnico",
+                "texto": "Graduarme del colegio e iniciar un programa técnico."
+              },
+              {
+                "id": "tecnologico",
+                "texto": "Graduarme del colegio e iniciar un programa tecnológico."
+              },
+              {
+                "id": "universidad",
+                "texto": "Graduarme del colegio e iniciar una carrera universitaria (pregrado)."
+              },
+              {
+                "id": "complementaria",
+                "texto": "Graduarme del colegio y realizar un curso de formación complementaria."
+              },
+              {
+                "id": "continuar_superior",
+                "texto": "Continuar con mis estudios actuales de educación superior (técnico, tecnológico o universitario)."
+              },
+              {
+                "id": "finalizar_trabajar",
+                "texto": "Finalizar mis estudios superiores actuales y comenzar a trabajar."
+              },
+              {
+                "id": "finalizar_otro_programa",
+                "texto": "Finalizar mis estudios superiores actuales y continuar con otro programa de educación superior."
+              },
+              {
+                "id": "no_continuar",
+                "texto": "Por ahora, no tengo pensado continuar estudiando."
+              },
+              {
+                "id": "no_decidido",
+                "texto": "Aún no he decidido qué voy a hacer."
+              },
+              {
+                "id": "otro",
+                "texto": "Otro",
+                "otro": true
+              }
+            ]
+          },
+          {
+            "id": "q_plan_trabajo",
+            "tipo": "unica",
+            "titulo": "Actualmente, ¿cuál de las siguientes opciones describe mejor tu situación frente al trabajo, el emprendimiento y la generación de ingresos?",
+            "obligatoria": true,
+            "opciones": [
+              {
+                "id": "solo_estudios",
+                "texto": "Por ahora, quiero concentrarme únicamente en mis estudios y no estoy buscando trabajar."
+              },
+              {
+                "id": "trabajar_despues",
+                "texto": "Quiero continuar estudiando y considero trabajar como una posibilidad, pero no de manera inmediata."
+              },
+              {
+                "id": "mas_5_hv",
+                "texto": "Quiero trabajar y ya he enviado más de 5 hojas de vida."
+              },
+              {
+                "id": "entre_1_5_hv",
+                "texto": "Quiero trabajar y ya he enviado entre 1 y 5 hojas de vida."
+              },
+              {
+                "id": "sin_hv",
+                "texto": "Quiero trabajar, pero todavía no he comenzado a enviar hojas de vida."
+              },
+              {
+                "id": "trabajando",
+                "texto": "Actualmente estoy trabajando."
+              },
+              {
+                "id": "emprendimiento_ingresos",
+                "texto": "Tengo un emprendimiento propio que ya está generando ingresos."
+              },
+              {
+                "id": "emprendimiento_idea",
+                "texto": "Estoy desarrollando una idea de emprendimiento, pero todavía no genera ingresos."
+              },
+              {
+                "id": "no_claro",
+                "texto": "Aún no tengo claro qué quiero hacer para generar ingresos."
+              },
+              {
+                "id": "otro",
+                "texto": "Otro",
+                "otro": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s_monitor",
+        "titulo": "Ser monitor o monitora en 2027",
+        "items": [
+          {
+            "id": "q_monitor_2027",
+            "tipo": "unica",
+            "titulo": "¿Te gustaría postularte para ser monitor o monitora de Jóvenes creaTIvos en tu ciudad durante 2027, acompañando y motivando a una nueva generación de jóvenes?",
+            "obligatoria": true,
+            "opciones": [
+              {
+                "id": "si",
+                "texto": "¡Sí! Me encantaría tener la oportunidad de ser monitor o monitora."
+              },
+              {
+                "id": "tal_vez",
+                "texto": "Tal vez, me gustaría conocer más sobre las responsabilidades y requisitos."
+              },
+              {
+                "id": "no",
+                "texto": "No, por ahora prefiero participar de otras maneras."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s_comunidad",
+        "titulo": "Comunidad y embajadores",
+        "items": [
+          {
+            "id": "q_comunidad",
+            "tipo": "unica",
+            "titulo": "¿Te gustaría formar parte de la comunidad Jóvenes creaTIvos y mantenerte conectado a través de nuestros canales de comunicación para conocer oportunidades de formación, empleo, emprendimiento, eventos y nuevas experiencias?",
+            "obligatoria": true,
+            "opciones": [
+              {
+                "id": "si",
+                "texto": "Sí, quiero ser parte de la comunidad Jóvenes creaTIvos y mantenerme conectado para conocer nuevas oportunidades."
+              },
+              {
+                "id": "no",
+                "texto": "No, no quiero ser parte de la comunidad Jóvenes creaTIvos."
+              }
+            ]
+          },
+          {
+            "id": "q_embajador",
+            "tipo": "unica",
+            "titulo": "¿Te gustaría tener la oportunidad de convertirte en embajador o embajadora de Jóvenes creaTIvos en 2027, compartir tu experiencia e inspirar a otros jóvenes?",
+            "obligatoria": true,
+            "opciones": [
+              {
+                "id": "si",
+                "texto": "¡Sí! Me encantaría ser embajador o embajadora de Jóvenes creaTIvos."
+              },
+              {
+                "id": "me_interesa",
+                "texto": "Me interesa, pero quisiera conocer más sobre esta oportunidad."
+              },
+              {
+                "id": "no",
+                "texto": "No, por ahora no me gustaría ser embajador o embajadora."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

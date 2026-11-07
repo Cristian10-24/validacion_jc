@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="Imagen de ejemplo">
+  <rect width="1600" height="900" fill="#fff1ea"/>
+  <circle cx="1380" cy="140" r="230" fill="none" stroke="#f25c2a" stroke-width="70"/>
+  <circle cx="190" cy="790" r="300" fill="none" stroke="#ffe1d3" stroke-width="90"/>
+  <circle cx="560" cy="210" r="34" fill="#ffc93c"/>
+  <rect x="1080" y="640" width="56" height="56" rx="12" fill="#3e8fd0" transform="rotate(20 1108 668)"/>
+  <rect x="380" y="520" width="40" height="40" rx="8" fill="#e2407a" transform="rotate(45 400 540)"/>
+  <text x="800" y="430" text-anchor="middle" font-family="Outfit, Segoe UI, sans-serif" font-size="96" font-weight="800" fill="#1c1a24">Clausura 2026</text>
+  <text x="800" y="520" text-anchor="middle" font-family="Outfit, Segoe UI, sans-serif" font-size="44" font-weight="600" fill="#9c3210">Imagen de ejemplo</text>
+</svg>

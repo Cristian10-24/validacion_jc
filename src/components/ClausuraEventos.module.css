@@ -1,0 +1,45 @@
+/* Eventos de clausura (admin y lectura). Complementa MonitorPanel.module.css. */
+.lectura { margin-top: 6px; font: 500 13.5px var(--font); color: var(--muted); }
+.error { margin-top: 14px; border-radius: 14px; background: var(--red-soft); color: var(--red-dark); padding: 12px 14px; font: 600 14px var(--font); }
+.vacio { margin-top: 18px; font: 500 14.5px var(--font); color: var(--muted); }
+
+.lista { display: grid; gap: 14px; margin-top: 18px; }
+.evento { border: 2px solid var(--line-2); border-radius: 22px; overflow: hidden; background: #fff; display: grid; }
+.portada { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; background: var(--orange-soft); }
+.sinPortada { display: flex; align-items: center; justify-content: center; font: 600 13px var(--font); color: var(--muted); }
+.cuerpo { padding: 16px 18px; display: grid; gap: 10px; }
+.etiquetas { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border-radius: 999px; padding: 4px 10px; font: 700 12px var(--font); background: var(--surface-2); color: var(--ink-2); }
+.titulo { margin: 0; font: 800 19px/1.2 var(--font); letter-spacing: -.02em; }
+.datos { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; font: 500 14px/1.4 var(--font); }
+.datos dt { color: var(--muted); font-weight: 600; }
+.datos dd { margin: 0; color: var(--ink); word-break: break-word; }
+.acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.btn {
+  height: 40px; padding: 0 14px; border-radius: 12px; border: 2px solid var(--line); background: #fff; color: var(--ink);
+  font: 700 14px var(--font); display: inline-flex; align-items: center; text-decoration: none; cursor: pointer;
+}
+.btn:hover { border-color: var(--orange); color: var(--ink); }
+.btnVerde { background: var(--green); border-color: var(--green); color: #fff; }
+.btnVerde:hover { color: #fff; }
+.btnRojo { background: #fff; border-color: var(--red); color: var(--red-ink); }
+
+.modal { max-width: 760px; width: 100%; max-height: calc(100dvh - 32px); overflow-y: auto; }
+.grid { display: grid; gap: 14px; margin-top: 8px; }
+.campo { display: grid; gap: 6px; font: 700 14px var(--font); border: 0; padding: 0; margin: 0; min-width: 0; }
+.campo legend { padding: 0; margin-bottom: 6px; }
+.ancho { grid-column: 1 / -1; }
+.ayuda { font: 500 12.5px var(--font); color: var(--muted); }
+.textarea { height: auto; min-height: 90px; padding: 12px 14px; font: 500 15px/1.5 var(--font); resize: vertical; }
+.ciudades { display: flex; flex-wrap: wrap; gap: 8px; }
+.check { display: inline-flex; align-items: center; gap: 8px; font: 600 14px var(--font); border: 2px solid var(--line); border-radius: 12px; padding: 8px 12px; }
+.check input { width: 18px; height: 18px; accent-color: var(--orange); }
+.portadaFila { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.portadaMini { width: 160px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 12px; background: var(--orange-soft); }
+.errores { margin: 14px 0 0; padding: 12px 14px 12px 30px; border-radius: 14px; background: var(--red-soft); color: var(--red-dark); font: 600 14px/1.45 var(--font); }
+
+@media (min-width: 760px) {
+  .grid { grid-template-columns: 1fr 1fr; }
+  .evento { grid-template-columns: 280px 1fr; }
+  .portada { height: 100%; aspect-ratio: auto; min-height: 180px; }
+}

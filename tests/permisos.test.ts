@@ -83,6 +83,11 @@ describe("matriz de permisos", () => {
     encuesta_comentar: [true, true, true],
     encuesta_resumen: [false, true, true],
     encuesta_sin_coincidencia: [false, false, true],
+    clausura_ver: [true, true, true],
+    clausura_comentar: [true, true, true],
+    clausura_exportar: [true, true, true],
+    clausura_resumen: [true, true, true],
+    clausura_gestionar: [false, false, true],
   };
   for (const [permiso, esperado] of Object.entries(tabla))
     it(permiso, () => expect(ROLES.map((r) => puede(r, permiso as Permiso))).toEqual(esperado));

@@ -1,0 +1,87 @@
+/* Portal de clausura: complementa StudentFlow.module.css (misma identidad). Móvil primero. */
+
+.salir {
+  border: 0; background: #f0ebe6; border-radius: 12px; height: 36px; padding: 0 12px;
+  font: 600 13.5px var(--font); color: var(--ink); white-space: nowrap; max-width: 46vw; overflow: hidden; text-overflow: ellipsis;
+}
+
+.progreso { width: 100%; padding: 0; margin-bottom: 18px; }
+
+/* Datos del evento */
+.evInfo { margin-top: 18px; width: 100%; display: grid; gap: 14px; }
+.evImg { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 22px; background: var(--orange-soft); display: block; }
+.evRows { display: grid; gap: 10px; border-radius: 20px; background: var(--orange-tint); padding: 16px 16px; }
+.evRow { display: flex; gap: 12px; align-items: flex-start; font: 500 15.5px/1.4 var(--font); color: var(--ink-2); }
+.evRow b { color: var(--ink); }
+.evIcon { flex: none; width: 34px; height: 34px; border-radius: 11px; background: #fff; color: var(--orange-dark); display: flex; align-items: center; justify-content: center; }
+
+.rico { font: 500 15.5px/1.55 var(--font); color: var(--muted); }
+.rico p { margin: 0 0 10px; }
+.rico p:last-child { margin-bottom: 0; }
+.rico ul { margin: 0 0 10px; padding-left: 20px; }
+.rico strong { color: var(--ink); }
+
+/* /clausura: lista de eventos publicados */
+.ciudades { margin-top: 20px; width: 100%; display: grid; gap: 8px; }
+.ciudad {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px; text-decoration: none;
+  border: 2px solid var(--line); border-radius: 16px; padding: 12px 16px; color: var(--ink); background: #fff;
+  font: 500 14.5px var(--font);
+}
+.ciudad b { font: 700 16px var(--font); }
+.ciudad span { color: var(--muted); }
+.ciudad:hover { border-color: var(--orange); color: var(--ink); }
+
+/* Preguntas */
+.pregunta + .pregunta, .bloque + .pregunta, .pregunta + .bloque, .bloque + .bloque { margin-top: 22px; }
+.obligatoria { color: var(--red-ink); }
+.ayuda { margin: -2px 0 10px; font: 500 14px/1.45 var(--font); color: var(--muted); }
+.opciones { display: grid; gap: 10px; }
+.sino { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.radio { border-radius: 50%; }
+:global(.check.is-on) .radio { box-shadow: inset 0 0 0 5px #fff; }
+.textarea { height: auto; min-height: 120px; padding: 14px 16px; font: 500 16px/1.5 var(--font); resize: vertical; }
+.select { appearance: auto; font-size: 17px; }
+.corto { max-width: 220px; }
+
+.bloque { border-radius: 18px; background: var(--surface-2); padding: 16px 18px; }
+.bloqueTitulo { font: 700 16px var(--font); margin-bottom: 6px; }
+.bloqueImg { width: 100%; border-radius: 14px; margin-top: 10px; display: block; }
+
+.otro { margin-top: 12px; }
+
+/* Calendario */
+.calendario { display: grid; gap: 10px; justify-items: center; margin: 18px 0 14px; }
+.calendario :global(.btn) { text-decoration: none; }
+.google { font: 700 15px var(--font); color: var(--orange-dark); }
+
+/* Contacto */
+.bloqueDato + .bloqueDato { margin-top: 24px; padding-top: 22px; border-top: 1.5px dashed var(--line); }
+.datoOculto { font: 700 20px var(--font); letter-spacing: .01em; word-break: break-all; }
+.filaDato { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.preguntaCorta { margin: 16px 0 10px; font: 700 15px var(--font); }
+.cambiar { font: 700 14.5px var(--font); color: var(--orange-dark); margin-top: 8px; }
+
+/* Resumen */
+.resumenSec { border-radius: 18px; background: var(--surface-2); padding: 14px 16px; }
+.resumenSec + .resumenSec { margin-top: 12px; }
+.resumenHead { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font: 700 15px var(--font); margin-bottom: 8px; }
+.resumenHead .cambiar { margin-top: 0; }
+.resumenLista { margin: 0; display: grid; gap: 8px; }
+.resumenLista dt { font: 600 13px var(--font); color: var(--muted); }
+.resumenLista dd { margin: 2px 0 0; font: 600 15px/1.4 var(--font); color: var(--ink); white-space: pre-wrap; word-break: break-word; }
+.sinRespuesta { color: var(--muted-2); font-weight: 500; }
+
+/* Éxito */
+.exito { display: grid; gap: 4px; }
+.exitoCheck { width: 64px; height: 64px; border-radius: 22px; background: var(--green); color: #fff; display: flex; align-items: center; justify-content: center; }
+.exitoTitulo { margin-top: 12px; font: 800 18px var(--font); }
+.exito .evInfo { margin-top: 8px; }
+.iconoNaranja { background: var(--orange-soft); color: var(--orange-dark); }
+
+@media (min-width: 960px) {
+  .salir { height: 40px; padding: 0 16px; font-size: 14px; margin-left: 20px; }
+  .mainPortada { align-items: start; }
+  .mainPortada > section:last-child { position: sticky; top: 24px; }
+  .evInfo { max-width: 560px; }
+}

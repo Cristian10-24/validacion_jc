@@ -1,0 +1,143 @@
+// =====================================================================================================
+// EJEMPLO COMENTADO de un evento de clausura. Muestra cada tipo de pregunta y cada tipo de condición.
+//
+// Cómo usarlo:
+//   1. Copia este archivo a eventos/<ciudad>.json (puedes dejar los comentarios: el script los acepta).
+//   2. Cambia los datos del evento y las preguntas.
+//   3. Revisa sin escribir nada:   npm run clausura:evento -- eventos/<ciudad>.json --dry-run
+//   4. Publica:                    npm run clausura:evento -- eventos/<ciudad>.json --estado=abierto --confirmar
+//   5. Cerrar más adelante:        npm run clausura:evento -- --slug=<slug> --estado=cerrado --confirmar
+//   6. Permitir editar después de enviar (por defecto NO): --permitir-edicion=si (o =no para volver a cerrarlo)
+//
+// Datos pendientes: escribe "[POR DEFINIR]" (en fechas: "2026-11-19T[POR DEFINIR]"). Con alguno así el script NO
+// deja abrir el evento y dice qué falta. Sin fechas completas ni siquiera lo guarda como borrador.
+//
+// Variables en los textos del formulario y la descripción: {evento} ("EXPOFeria y clausura" o "clausura", según el
+// tipo), {fecha} ("sábado 14 de noviembre"), {hora} ("9:00 a. m.") y {lugar}.
+//
+// Reglas de los IDs (secciones, preguntas, bloques y opciones):
+//   - Solo minúsculas, números y _ (máximo 40). Ej.: q_asistencia, s_expoferia, si, no_se.
+//   - Son PERMANENTES: puedes cambiar los textos cuando quieras, pero no cambies un ID que ya tiene respuestas.
+//   - Si una pregunta ya tiene respuestas, no la borres: ponle "archivada": true (deja de mostrarse).
+//   - Usa los mismos IDs en todas las ciudades para la misma pregunta: así el Excel junta las columnas.
+// =====================================================================================================
+{
+  // ----- Datos del evento -----
+  "slug": "ejemplo-2026",                 // la dirección: /clausura/ejemplo-2026 (minúsculas, números y guiones)
+  "tipo": "expoferia",                    // "expoferia" (clausura + proyectos) o "clausura" (solo la ceremonia)
+  "titulo": "EXPOFeria y clausura 2026",  // opcional: si falta, se arma con el tipo y el año
+  "kicker": "EXPOFERIA 2026",             // opcional: texto pequeño en mayúsculas sobre el título
+  "nombreVisible": "Paysandú",            // lo que ve el estudiante como ciudad
+  "ciudades": ["Uruguay"],                // valores EXACTOS de la ciudad en students (el script avisa si no existen)
+  // Texto con formato básico: **negrita**, *cursiva*, [enlace](https://…), listas con "- ", línea en blanco = párrafo.
+  "descripcion": "Celebramos el cierre del programa.\n\n- Llega **30 minutos antes**.\n- Trae tu documento.\n\nMás información en [nuestra página](https://tocaunavida.org).",
+  "lugar": "Teatro Florencio Sánchez",
+  "direccion": "19 de Abril 926",
+  "mapaUrl": null,                        // null = se arma un enlace de Google Maps con lugar + dirección
+  "inicio": "2026-11-30T18:00:00-03:00",  // fecha y hora CON la zona (-05:00 Colombia, -03:00 Uruguay)
+  "fin": "2026-11-30T21:00:00-03:00",     // o null
+  "zonaHoraria": "America/Montevideo",    // America/Bogota · America/Panama · America/Guayaquil · America/Montevideo
+  "zonaHorariaTexto": null,               // null = "hora de Uruguay" (se deduce de zonaHoraria)
+  "imagen": "/clausura/ejemplo.svg",      // archivo dentro de public/ (ej. public/clausura/paysandu.webp)
+  "estado": "borrador",                   // borrador (no se ve) · abierto · cerrado. --estado=... lo reemplaza
+  "fechaLimite": "[POR DEFINIR]",         // después de esto no se aceptan respuestas ni cambios (o null). Aquí: pendiente
+  "permitirEdicion": false,               // ¿puede editar después de enviar? Por defecto no (el admin puede reabrir a uno)
+  "preguntaAsistencia": "q_asistencia",   // la pregunta que el panel usa para contar asistencia
+  "opcionesAsisten": ["si", "aun_no"],    // opciones que cuentan como "asistirá": muestran "Agregar a mi calendario"
+
+  "formulario": {
+    "secciones": [
+      {
+        "id": "s_asistencia",
+        "titulo": "Tu asistencia",
+        "descripcion": "Responde con sinceridad: así organizamos el espacio y la comida.",
+        "items": [
+          // BLOQUE INFORMATIVO (no es pregunta): texto y/o imagen
+          { "id": "info_bienvenida", "tipo": "info", "titulo": "¡Llegamos al final!", "texto": "Gracias por este año.", "imagen": "/clausura/ejemplo.svg" },
+
+          // OPCIÓN ÚNICA con SALTOS por opción (como Google Forms):
+          //   sin "irA" → sigue normal · "irA": { "seccion": "…" } → va a esa sección · "irA": "enviar" → termina
+          //   Solo se puede saltar HACIA ADELANTE.
+          // {evento}, {fecha} y {hora} se reemplazan: "Asistiré a la EXPOFeria y clausura el lunes 30 de noviembre a las 6:00 p. m."
+          { "id": "q_asistencia", "tipo": "unica", "titulo": "Asistiré a la {evento} el {fecha} a las {hora}", "obligatoria": true, "opciones": [
+            { "id": "si", "texto": "Sí, asistiré" },
+            { "id": "no", "texto": "No podré asistir", "irA": { "seccion": "s_no_asiste" } },
+            { "id": "aun_no", "texto": "Aún no lo sé", "irA": "enviar" }
+          ] }
+        ]
+      },
+      {
+        "id": "s_datos",
+        "titulo": "Algunos datos",
+        // Después de esta sección: "siguiente" (por defecto), "enviar" o { "seccion": "…" }
+        "despues": { "seccion": "s_final" },
+        "items": [
+          // SÍ / NO: el valor guardado es "si" o "no"
+          { "id": "q_acompanantes", "tipo": "sino", "titulo": "¿Vienes con acompañantes?", "obligatoria": true },
+
+          // NÚMERO con mínimo, máximo y solo enteros. CONDICIÓN "=": se muestra solo si q_acompanantes = "si"
+          { "id": "q_acompanantes_num", "tipo": "numero", "titulo": "¿Cuántos?", "obligatoria": true, "entero": true, "min": 1, "max": 2,
+            "mostrarSi": { "pregunta": "q_acompanantes", "op": "=", "valor": "si" } },
+
+          // TEXTO CORTO (hasta 300 caracteres) y PÁRRAFO (hasta 3000), con texto de ayuda
+          { "id": "q_proyecto", "tipo": "texto", "titulo": "Nombre de tu proyecto", "ayuda": "Como aparece en tu presentación." },
+
+          // TEXTO con formato: "documento" (solo dígitos y letras, se guarda sin puntos ni espacios) o "url" (enlace válido)
+          { "id": "q_doc_acudiente", "tipo": "texto", "formato": "documento", "titulo": "Documento de tu acudiente" },
+          { "id": "q_enlace", "tipo": "texto", "formato": "url", "titulo": "Enlace de tu proyecto, si lo tienes" },
+          { "id": "q_descripcion", "tipo": "parrafo", "titulo": "Cuéntanos de qué se trata" },
+
+          // CASILLAS (varias), con mínimo y máximo de opciones marcadas
+          { "id": "q_necesidades", "tipo": "casillas", "titulo": "¿Qué necesitas?", "min": 1, "max": 3, "opciones": [
+            { "id": "mesa", "texto": "Mesa" }, { "id": "toma", "texto": "Toma eléctrica" }, { "id": "pantalla", "texto": "Pantalla" }, { "id": "otra", "texto": "Otra" }
+          ] },
+          // CONDICIÓN "incluye" (casillas): se muestra si marcó "otra"
+          { "id": "q_necesidades_otra", "tipo": "texto", "titulo": "¿Qué otra cosa?", "obligatoria": true,
+            "mostrarSi": { "pregunta": "q_necesidades", "op": "incluye", "valor": "otra" } },
+
+          // DESPLEGABLE (como opción única, en una lista)
+          // OPCIÓN "OTRO": con "otro": true, al elegirla aparece "¿Cuál?" (obligatorio). Se muestra como "Otro: <texto>".
+          { "id": "q_talla", "tipo": "desplegable", "titulo": "Talla de camiseta", "opciones": [
+            { "id": "s", "texto": "S" }, { "id": "m", "texto": "M" }, { "id": "l", "texto": "L" }, { "id": "xl", "texto": "XL" },
+            { "id": "otra", "texto": "Otra", "otro": true }
+          ] },
+
+          // FECHA (AAAA-MM-DD) y TELÉFONO (se valida con los indicativos de Colombia, Panamá, Ecuador y Uruguay)
+          { "id": "q_llegada", "tipo": "fecha", "titulo": "¿Qué día llegas a la ciudad?" },
+          { "id": "q_tel_acudiente", "tipo": "telefono", "titulo": "Celular de un acudiente" },
+
+          // CONDICIÓN "!=": se muestra si la talla NO es "s" (también si no respondió)
+          { "id": "info_tallas", "tipo": "info", "texto": "Las tallas grandes se entregan el mismo día.",
+            "mostrarSi": { "pregunta": "q_talla", "op": "!=", "valor": "s" } },
+
+          // VARIAS CONDICIONES (deben cumplirse todas): lista de condiciones
+          { "id": "q_transporte", "tipo": "sino", "titulo": "¿Necesitas transporte para tus acompañantes?",
+            "mostrarSi": [
+              { "pregunta": "q_acompanantes", "op": "=", "valor": "si" },
+              { "pregunta": "q_acompanantes_num", "op": "=", "valor": 2 }
+            ] },
+
+          // PREGUNTA ARCHIVADA: ya no se muestra, pero sus respuestas viejas se conservan
+          { "id": "q_vieja", "tipo": "texto", "titulo": "Pregunta que ya no usamos", "archivada": true }
+        ]
+      },
+      {
+        "id": "s_no_asiste",
+        "titulo": "Lamentamos que no puedas venir",
+        "despues": "enviar",
+        "items": [
+          { "id": "q_motivo", "tipo": "parrafo", "titulo": "¿Por qué no podrás asistir?", "obligatoria": true }
+        ]
+      },
+      {
+        "id": "s_final",
+        "titulo": "Para terminar",
+        // CONDICIÓN sobre una SECCIÓN completa: solo aparece si la respuesta de asistencia es "si"
+        "mostrarSi": { "pregunta": "q_asistencia", "op": "=", "valor": "si" },
+        "items": [
+          { "id": "q_comentarios", "tipo": "parrafo", "titulo": "¿Algo más que debamos saber?" }
+        ]
+      }
+    ]
+  }
+}
