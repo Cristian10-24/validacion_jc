@@ -1,4 +1,5 @@
 // Resumen del avance de testimonios por ciudad. Solo lectura.
+import { soloActivos } from "@/lib/activo";
 import type { SessionUser } from "@/lib/auth";
 import { puede } from "@/lib/permisos";
 import { testimonios } from "./db";
@@ -19,11 +20,11 @@ function sumar(c: Conteo, f: Pick<FilaTestimonio, "estado" | "conComentarios">) 
   if (f.estado === "pendiente" && f.conComentarios) c.conComentarios++;
 }
 
-/** Conteos por ciudad, ordenados de menor a mayor avance (a igual avance, alfabético). Función pura. */
-export function contarPorCiudad(filas: Pick<FilaTestimonio, "ciudad" | "estado" | "conComentarios">[], monitores = new Map<string, string[]>()): { total: Conteo; ciudades: CiudadTestimonios[] } {
+/** Conteos por ciudad, ordenados de menor a mayor avance (a igual avance, alfabético). Los inactivos no cuentan. Función pura. */
+export function contarPorCiudad(filas: (Pick<FilaTestimonio, "ciudad" | "estado" | "conComentarios"> & Partial<Pick<FilaTestimonio, "inactivo">>)[], monitores = new Map<string, string[]>()): { total: Conteo; ciudades: CiudadTestimonios[] } {
   const total = vacio();
   const por = new Map<string, CiudadTestimonios>();
-  for (const f of filas) {
+  for (const f of soloActivos(filas)) {
     const c = por.get(f.ciudad) ?? { ciudad: f.ciudad, ...vacio(), monitores: monitores.get(f.ciudad) ?? [] };
     sumar(c, f);
     sumar(total, f);

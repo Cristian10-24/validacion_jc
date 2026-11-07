@@ -21,5 +21,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "no_encontrado" }, { status: 404 });
   }
   if (r.tipo === "pronto") return NextResponse.json({ resultado: "pronto" });
+  if (r.tipo === "inactivo") return NextResponse.json({ resultado: "inactivo" });
   return responderVista(r.ctx);
 }

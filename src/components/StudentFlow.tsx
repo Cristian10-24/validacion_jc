@@ -6,7 +6,7 @@ import { checkEmail, domainOf, emailError } from "@/lib/validation/email";
 import { cleanSpaces, NAME_WARNING_TEXT, nameWarnings, toProperName } from "@/lib/validation/name";
 import s from "./StudentFlow.module.css";
 
-type Step = "ingreso" | "cargando" | "revision" | "correccion" | "exito" | "noEncontrado" | "yaValidado";
+type Step = "ingreso" | "cargando" | "revision" | "correccion" | "exito" | "noEncontrado" | "yaValidado" | "inactivo";
 type Validado = { nombre: string; correo: string; validadoEn: string | null };
 
 // [kicker, título, subtítulo, color del kicker]: textos del prototipo.
@@ -17,6 +17,7 @@ const COPY: Record<string, [string, string, string, string]> = {
   exito: ["Todo listo", "¡Listo! Tus datos quedaron validados", "Tu certificado llegará a este correo. Ya puedes cerrar esta página.", "var(--green-dark)"],
   enviado: ["Todo listo", "¡Listo! Recibimos tus datos", "Tu monitor revisará el cambio. Tu certificado llegará a este correo. Ya puedes cerrar esta página.", "var(--green-dark)"],
   noEncontrado: ["Algo no cuadra", "Tu documento no aparece", "Escríbele a tu monitor para que te agregue. Revisa también que el número esté bien escrito.", "var(--red-ink)"],
+  inactivo: ["Necesitamos revisar algo", "Escríbele a tu monitor", "Tu monitor te ayuda a revisar tus datos para el certificado.", "var(--orange-dark)"],
   yaValidado: ["Todo en orden", "Ya validaste tus datos", "No tienes que hacer nada más. Si necesitas un cambio, escríbele a tu monitor.", "var(--green-dark)"],
 };
 
@@ -82,6 +83,7 @@ export default function StudentFlow({ privacyUrl }: { privacyUrl: string }) {
     try {
       const res = await fetch("/api/estudiante/buscar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ documento: d }) });
       if (res.status === 404) return setStep("noEncontrado");
+      if (res.status === 409) return setStep("inactivo");
       if (res.status === 429) {
         setStep("ingreso");
         return setDocErr((await res.json().catch(() => ({}))).mensaje ?? "Demasiados intentos. Espera unos minutos.");
@@ -340,6 +342,15 @@ export default function StudentFlow({ privacyUrl }: { privacyUrl: string }) {
               <div className={s.docShown}>{doc}</div>
               <div className={s.grow} />
               <button type="button" className="btn btn-primary" style={{ marginTop: 22 }} onClick={reiniciar}>Intentar con otro número</button>
+            </>
+          )}
+
+          {step === "inactivo" && (
+            <>
+              <div className={s.smallLabel}>Número que escribiste</div>
+              <div className={s.docShown}>{doc}</div>
+              <div className={s.grow} />
+              <button type="button" className="btn btn-soft" style={{ marginTop: 22 }} onClick={reiniciar}>Volver al inicio</button>
             </>
           )}
 

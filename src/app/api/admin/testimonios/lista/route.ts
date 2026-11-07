@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { exigir, sameOrigin } from "@/lib/auth";
+import { inactivosEnStudents } from "@/lib/estudiantes-activo";
 import { readRowsFromBuffer } from "@/lib/excel";
 import { aplicarLista, vistaPreviaLista } from "@/lib/testimonios/lista-aplicar";
 
@@ -32,12 +33,14 @@ export async function POST(req: Request) {
   }
   if (rows.length === 0) return NextResponse.json({ error: "archivo", mensaje: "El archivo no tiene filas (la primera fila deben ser los encabezados)." }, { status: 400 });
 
-  if (form!.get("modo") !== "aplicar") return NextResponse.json({ plan: await vistaPreviaLista(rows) });
+  // Quien ya está inactivo en students se crea inactivo en testimonios (solo lectura de students).
+  const inactivos = await inactivosEnStudents();
+  if (form!.get("modo") !== "aplicar") return NextResponse.json({ plan: await vistaPreviaLista(rows, inactivos) });
 
   let ids: unknown;
   try { ids = JSON.parse(String(form!.get("eliminar") ?? "[]")); } catch { ids = null; }
   const eliminar = Eliminar.safeParse(ids);
   if (!eliminar.success) return NextResponse.json({ error: "datos_invalidos" }, { status: 400 });
-  const r = await aplicarLista(rows, eliminar.data, g.user.usuario);
-  return NextResponse.json({ resultado: { insertados: r.insertados, actualizados: r.actualizados, eliminados: r.eliminados, recruzadas: r.recruzadas } });
+  const r = await aplicarLista(rows, eliminar.data, g.user.usuario, inactivos);
+  return NextResponse.json({ resultado: { insertados: r.insertados, inactivos: r.inactivos, actualizados: r.actualizados, eliminados: r.eliminados, recruzadas: r.recruzadas } });
 }

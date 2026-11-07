@@ -34,7 +34,9 @@ export type Permiso =
   | "clausura_comentar"
   | "clausura_exportar"               // Excel de respuestas: monitor solo sus ciudades
   | "clausura_resumen"                // avance por ciudad (monitor: solo sus ciudades; coordinación y admin: todas)
-  | "clausura_gestionar";              // crear/editar eventos, abrir/cerrar, reabrir respuestas (solo admin)
+  | "clausura_gestionar"               // crear/editar eventos, abrir/cerrar, reabrir respuestas (solo admin)
+  // Estado activo/inactivo del estudiante (students + testimonios_participantes). Todos ven la etiqueta y el filtro.
+  | "estudiantes_activo";              // inactivar y reactivar (solo admin)
 
 const ENCUESTA_MONITOR: readonly Permiso[] = ["encuesta_ver", "encuesta_comentar"];
 const CLAUSURA_TODOS: readonly Permiso[] = ["clausura_ver", "clausura_comentar", "clausura_exportar", "clausura_resumen"];
@@ -45,7 +47,7 @@ const PERMISOS: Record<RolUsuario, readonly Permiso[]> = {
     ...ENCUESTA_MONITOR, "encuesta_resumen", ...CLAUSURA_TODOS],
   admin: ["ver_todas_las_ciudades", "ver_resumen", "descargar_excel", "ver_historial", "subir_lista", "gestionar_usuarios", "editar_todo", "exportar_pendientes",
     "testimonios_ver", "testimonios_comentar", "testimonios_subir_lista", "testimonios_sin_duenio", "testimonios_exportar_pendientes", "testimonios_resumen",
-    ...ENCUESTA_MONITOR, "encuesta_resumen", "encuesta_sin_coincidencia", ...CLAUSURA_TODOS, "clausura_gestionar"],
+    ...ENCUESTA_MONITOR, "encuesta_resumen", "encuesta_sin_coincidencia", ...CLAUSURA_TODOS, "clausura_gestionar", "estudiantes_activo"],
 };
 
 export function puede(rol: string | undefined, permiso: Permiso): boolean {

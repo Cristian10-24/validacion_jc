@@ -12,7 +12,7 @@ const estado = vi.hoisted(() => {
 vi.mock("next/headers", () => ({ cookies: async () => ({ get: () => (estado.token ? { value: estado.token } : undefined) }) }));
 const prohibido = () => { throw new Error("La ruta llegó a la base sin permiso"); };
 vi.mock("@/lib/db", () => ({
-  collections: async () => ({ users: { findOne: async () => estado.usuario } }),
+  collections: async () => ({ users: { findOne: async () => estado.usuario }, get students() { return prohibido(); } }),
   getDb: prohibido,
 }));
 vi.mock("@/lib/testimonios/db", () => ({ testimonios: prohibido, COLECCIONES: {} }));

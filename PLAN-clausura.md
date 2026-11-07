@@ -12,7 +12,7 @@
 7. Al estudiante, celular prellenado oculto (`300 ••• •• 33`) con "Cambiar número". En el Excel (interno) van completos el correo original, el nuevo y el celular.
 8. Solo admin crea y edita eventos (`clausura_gestionar`). Coordinación ve, comenta, exporta y ve el avance.
 9. No se agrega enlace en la portada de validación; `page.tsx` no se toca.
-10. Fase 8: el monitor marca inactivo en sus ciudades (motivo obligatorio), no reactiva; reactivan coordinación y admin.
+10. Fase 8 (decisión final, 2026-11-07): SOLO el admin inactiva y reactiva (motivo obligatorio al inactivar). Monitores y coordinación solo ven la etiqueta "Inactivo" y el filtro "Mostrar inactivos"; el servidor responde 403.
 11. Fase 8: un solo interruptor por persona (students + testimonios_participantes por documento normalizado, donde exista), registrado en `changeLog` y `testimonios_auditoria`.
 12. Datos reales los pasa el usuario; mientras tanto, datos de ejemplo.
 - Fase 8: el Excel de certificados también excluye inactivos por defecto, con opción para incluirlos.
@@ -250,7 +250,7 @@ Esta fase **sí escribe en colecciones existentes** (`students`, `testimonios_pa
 
 - Campos nuevos (solo se escriben al marcar): `activo: false`, `inactivoMotivo`, `inactivoEn`, `inactivoPor {usuario, nombre, rol}`; al reactivar `activo: true` y se conservan los datos del último cambio. **Sin migración:** el filtro de activos es `{ activo: { $ne: false } }` (sin el campo = activo).
 - Registro: en `students` → `changeLog` con `campo: "activo"` y `accion: "activar" | "inactivar"` (amplía dos uniones de tipos en `types.ts`); en participantes → `testimonios_auditoria`.
-- Permiso `estudiantes_activo`: coordinación y admin. Propuesta para el monitor: **puede marcar inactivo en sus ciudades con motivo obligatorio, pero no reactivar** (reactivar lo hace coordinación). **Pregunta 10.**
+- Permiso `estudiantes_activo`: **solo admin** (decisión final). Botón "Inactivar / Reactivar" en el menú ⋯ de la fila, en Estudiantes y en Clausura.
 - ¿Debe ser un solo interruptor por persona (al inactivar en `students`, se inactiva también su participante de testimonios con el mismo documento)? **Pregunta 11.**
 
 Consultas afectadas (todas pasan a excluir inactivos por defecto, con `?inactivos=1` / filtro "Mostrar inactivos" y etiqueta "Inactivo"):

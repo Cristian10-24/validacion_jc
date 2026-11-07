@@ -7,7 +7,9 @@ import { celularConIndicativo } from "@/lib/testimonios/celular";
 import { buscarTestimonios, compararDuplicados, esBusquedaDuplicados } from "@/lib/testimonios/busqueda";
 import { compararTestimonios, ultimaActividad, type EstadoTestimonio } from "@/lib/testimonios/estado";
 import type { ComentarioVista, FilaTestimonio } from "@/lib/testimonios/vista";
+import { soloActivos, visiblesSegunFiltro } from "@/lib/activo";
 import AppShell from "./AppShell";
+import { EtiquetaInactivo, FiltroInactivos, estilosInactivos as si, paramInactivos } from "./Inactivos";
 import m from "./MonitorPanel.module.css";
 import t from "./TestimoniosPanel.module.css";
 
@@ -42,8 +44,8 @@ function fecha(iso: string | null): string {
 }
 
 /** Descarga el Excel de pendientes (de una ciudad o de todas las del usuario). El servidor valida el alcance. */
-export async function descargarPendientesTestimonios(ciudad: string): Promise<{ archivo: string; filas: number }> {
-  const res = await fetch(`/api/testimonios/exportar-pendientes${ciudad ? `?ciudad=${encodeURIComponent(ciudad)}` : ""}`, { cache: "no-store" });
+export async function descargarPendientesTestimonios(ciudad: string, incluirInactivos = false): Promise<{ archivo: string; filas: number }> {
+  const res = await fetch(`/api/testimonios/exportar-pendientes?ciudad=${encodeURIComponent(ciudad)}${paramInactivos(incluirInactivos)}`, { cache: "no-store" });
   if (res.status === 401) { window.location.assign("/login"); throw new Error("sesion"); }
   if (!res.ok) throw new Error("exportar");
   const archivo = /filename="([^"]+)"/.exec(res.headers.get("Content-Disposition") ?? "")?.[1] ?? "pendientes_testimonios.xlsx";
@@ -86,6 +88,7 @@ export default function TestimoniosPanel({ user, inicial }: { user: SessionUser;
   const [edicion, setEdicion] = useState<{ id: string; texto: string } | null>(null); // comentario propio en edición
   const [errorEdicion, setErrorEdicion] = useState("");
   const [exportando, setExportando] = useState(false);
+  const [mostrarInactivos, setMostrarInactivos] = useState(false);
   const [toast, setToast] = useState<{ text: string; ok?: boolean } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const verTodas = puede(user.rol, "ver_todas_las_ciudades");
@@ -123,20 +126,23 @@ export default function TestimoniosPanel({ user, inicial }: { user: SessionUser;
   useEffect(() => { if (filas && ciudad && !ciudades.includes(ciudad)) setCiudad(""); }, [filas, ciudad, ciudades]);
   const enCiudad = useMemo(() => (filas ?? []).filter((f) => !ciudad || f.ciudad === ciudad), [filas, ciudad]);
   const duplicados = esBusquedaDuplicados(q);
-  const buscadas = useMemo(() => buscarTestimonios(enCiudad, q), [enCiudad, q]);
+  // Los inactivos no cuentan en totales ni porcentajes; solo se ven con "Mostrar inactivos".
+  const activosCiudad = useMemo(() => soloActivos(enCiudad), [enCiudad]);
+  const nInactivos = enCiudad.length - activosCiudad.length;
+  const buscadas = useMemo(() => buscarTestimonios(visiblesSegunFiltro(enCiudad, mostrarInactivos), q), [enCiudad, q, mostrarInactivos]);
   // Todos = Realizado + Pendiente; "con comentarios" es parte de Pendiente.
   const cnt = useMemo(() => {
     const c = { realizado: 0, pendiente: 0, comentarios: 0 };
-    for (const f of enCiudad) {
+    for (const f of activosCiudad) {
       c[f.estado]++;
       if (f.estado === "pendiente" && f.conComentarios) c.comentarios++;
     }
     return c;
-  }, [enCiudad]);
+  }, [activosCiudad]);
   const visibles = useMemo(() => buscadas.filter((f) =>
     filtro === "all" || (filtro === "comentarios" ? f.estado === "pendiente" && f.conComentarios : f.estado === filtro)).sort(duplicados ? compararDuplicados : compararTestimonios), [buscadas, filtro, duplicados]);
-  const pendientes = useMemo(() => buscadas.filter((f) => f.estado === "pendiente").sort((a, b) => a.nombre.localeCompare(b.nombre, "es")), [buscadas]);
-  const total = enCiudad.length;
+  const pendientes = useMemo(() => soloActivos(buscadas).filter((f) => f.estado === "pendiente").sort((a, b) => a.nombre.localeCompare(b.nombre, "es")), [buscadas]);
+  const total = activosCiudad.length;
   const pct = (n: number) => (total ? `${(n / total) * 100}%` : "0%");
   const abierta = filas?.find((f) => f.id === detalle) ?? null;
 
@@ -155,7 +161,7 @@ export default function TestimoniosPanel({ user, inicial }: { user: SessionUser;
   async function exportar() {
     setExportando(true);
     try {
-      const { filas: n } = await descargarPendientesTestimonios(ciudad);
+      const { filas: n } = await descargarPendientesTestimonios(ciudad, mostrarInactivos);
       aviso(`Excel descargado · ${n} ${n === 1 ? "pendiente" : "pendientes"}`, true);
     } catch {
       aviso("No se pudo generar el Excel. Intenta otra vez.");
@@ -249,6 +255,9 @@ export default function TestimoniosPanel({ user, inicial }: { user: SessionUser;
         <span className={m.searchIcon} aria-hidden />
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nombre, documento, correo, celular o escribe duplicados" aria-label="Buscar" />
       </label>
+      {(nInactivos > 0 || mostrarInactivos) && (
+        <div style={{ margin: "10px 0 4px" }}><FiltroInactivos valor={mostrarInactivos} onCambio={setMostrarInactivos} cuantos={nInactivos} /></div>
+      )}
 
       <div className={t.tableHead}><span>Participante</span><span>Contacto</span><span>Estado</span><span>Envío</span><span /></div>
 
@@ -266,12 +275,12 @@ export default function TestimoniosPanel({ user, inicial }: { user: SessionUser;
           const st = STY[f.estado];
           const ultimo = f.envios[0];
           return (
-            <div key={f.id} className={t.row}>
+            <div key={f.id} className={`${t.row} ${f.inactivo ? si.filaInactiva : ""}`}>
               <div className={t.rowGrid}>
                 <div className={t.who}>
                   <i className={`${t.dot} ${t.mobileDot}`} style={{ background: st.dot }} />
                   <div className={t.whoText}>
-                    <div className={t.name}>{f.nombre}</div>
+                    <div className={t.name}>{f.nombre} <EtiquetaInactivo info={f.inactivo} /></div>
                     <div className={t.doc}>{f.documento} · {f.ciudad}{f.ciudadOriginal ? <span className={t.alias}> ({f.ciudadOriginal})</span> : null}</div>
                   </div>
                 </div>

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { pideInactivos } from "@/lib/activo";
 import { exigir } from "@/lib/auth";
 import { collections } from "@/lib/db";
 import { datosCertificados, excelCertificados, nombreArchivo } from "@/lib/export";
@@ -6,7 +7,7 @@ import { datosCertificados, excelCertificados, nombreArchivo } from "@/lib/expor
 /**
  * Excel final para certificados, con dos pestañas cruzables por ID:
  * "Datos originales" (todos, como llegaron en la carga) y "Datos validados" (solo validados).
- * ?ciudad= filtra ambas pestañas. Solo lectura.
+ * ?ciudad= filtra ambas pestañas. Sin inactivos; ?inactivos=1 los incluye. Solo lectura.
  */
 export async function GET(req: Request) {
   const g = await exigir("descargar_excel");
@@ -14,7 +15,7 @@ export async function GET(req: Request) {
 
   const ciudad = new URL(req.url).searchParams.get("ciudad")?.trim().slice(0, 80) || undefined;
   const { students } = await collections();
-  const datos = await datosCertificados(students, { ciudad });
+  const datos = await datosCertificados(students, { ciudad, incluirInactivos: pideInactivos(req.url) });
   const sufijo = ciudad ? `_${ciudad.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "")}` : "";
   const archivo = nombreArchivo(sufijo);
   return new NextResponse(new Uint8Array(await excelCertificados(datos)), {

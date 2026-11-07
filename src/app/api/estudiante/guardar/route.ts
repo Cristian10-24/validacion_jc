@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { z } from "zod";
+import { esInactivo } from "@/lib/activo";
 import { collections } from "@/lib/db";
 import { logChanges } from "@/lib/history";
 import { studentPortalOpen } from "@/lib/portal";
@@ -29,6 +30,7 @@ export async function POST(req: Request) {
   // Se exige id + documento: el id solo no basta para modificar un registro.
   const student = await students.findOne({ _id: new ObjectId(body.id), documento: normalizeDocumento(body.documento) });
   if (!student) return NextResponse.json({ error: "no_encontrado" }, { status: 404 });
+  if (esInactivo(student)) return NextResponse.json({ error: "inactivo" }, { status: 409 });
   if (student.estado === "validado") return NextResponse.json({ error: "ya_validado" }, { status: 409 });
 
   const actualNombre = student.nombrePropuesto ?? student.nombre;

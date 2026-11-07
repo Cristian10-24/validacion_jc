@@ -8,6 +8,8 @@ import type { Estado } from "@/lib/types";
 import { checkEmail, domainOf, emailError } from "@/lib/validation/email";
 import { cleanSpaces, nameWarnings } from "@/lib/validation/name";
 import { compararFilas } from "@/lib/orden";
+import { soloActivos, visiblesSegunFiltro } from "@/lib/activo";
+import { DialogoActivo, EtiquetaInactivo, FiltroInactivos, estilosInactivos as si, paramInactivos, type Persona } from "./Inactivos";
 import AppShell from "./AppShell";
 import MenuFila from "./MenuFila";
 import s from "./MonitorPanel.module.css";
@@ -43,13 +45,13 @@ function fecha(iso: string | null): string {
 }
 
 // ----- Historial (coordinación y administración) -----
-type HistItem = { campo: "nombre" | "correo" | "estado" | "documento" | "ciudad" | "grupo"; anterior: string; nuevo: string; actor: { rol: string; usuario?: string }; accion: string; fecha: string };
+type HistItem = { campo: "nombre" | "correo" | "estado" | "documento" | "ciudad" | "grupo" | "activo"; anterior: string; nuevo: string; actor: { rol: string; usuario?: string }; accion: string; fecha: string; motivo?: string };
 const ACCION_TXT: Record<string, string> = {
   confirmar: "Confirmó sus datos", corregir: "Envió una corrección", aprobar: "Aprobó la corrección",
   editar: "Corrigió los datos", validar_en_nombre: "Validó por el estudiante", importar: "Actualizado desde la lista",
-  editar_admin: "Editó el registro",
+  editar_admin: "Editó el registro", inactivar: "Lo inactivó", activar: "Lo reactivó",
 };
-const CAMPO_TXT: Record<HistItem["campo"], string> = { nombre: "Nombre", correo: "Correo", estado: "Estado", documento: "Documento", ciudad: "Ciudad", grupo: "Grupo" };
+const CAMPO_TXT: Record<HistItem["campo"], string> = { nombre: "Nombre", correo: "Correo", estado: "Estado", documento: "Documento", ciudad: "Ciudad", grupo: "Grupo", activo: "Estado" };
 const actorTxt = (a: HistItem["actor"]) => (a.rol === "estudiante" ? "El estudiante" : `${ROL_TXT[a.rol as RolUsuario] ?? "Monitor"} · ${a.usuario ?? ""}`);
 
 /** Edición completa (solo administración). */
@@ -104,6 +106,9 @@ export default function MonitorPanel({ user, appUrl, inicial }: { user: SessionU
   const verHist = puede(user.rol, "ver_historial");
   const editarTodo = puede(user.rol, "editar_todo");
   const exportarPend = puede(user.rol, "exportar_pendientes");
+  const cambiarActivo = puede(user.rol, "estudiantes_activo");
+  const [mostrarInactivos, setMostrarInactivos] = useState(false);
+  const [dlgActivo, setDlgActivo] = useState<Persona | null>(null);
   const [menu, setMenu] = useState<string | null>(null); // fila con el menú "⋯" abierto
   const [descargando, setDescargando] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -162,7 +167,7 @@ export default function MonitorPanel({ user, appUrl, inicial }: { user: SessionU
   async function descargarPendientes() {
     setDescargando(true);
     try {
-      const res = await fetch(`/api/admin/exportar-pendientes${ciudad ? `?ciudad=${encodeURIComponent(ciudad)}` : ""}`, { cache: "no-store" });
+      const res = await fetch(`/api/admin/exportar-pendientes?ciudad=${encodeURIComponent(ciudad)}${paramInactivos(mostrarInactivos)}`, { cache: "no-store" });
       if (res.status === 401) return window.location.assign("/login");
       if (!res.ok) throw new Error();
       const archivo = /filename="([^"]+)"/.exec(res.headers.get("Content-Disposition") ?? "")?.[1] ?? "pendientes.xlsx";
@@ -201,19 +206,22 @@ export default function MonitorPanel({ user, appUrl, inicial }: { user: SessionU
   // Una ciudad en la URL que no es del usuario se ignora.
   useEffect(() => { if (rows && ciudad && !ciudades.includes(ciudad)) setCiudad(""); }, [rows, ciudad, ciudades]);
   const enCiudad = useMemo(() => (rows ?? []).filter((r) => !ciudad || r.ciudad === ciudad), [rows, ciudad]);
+  // Los inactivos NO cuentan en totales ni porcentajes; solo se ven con "Mostrar inactivos".
+  const activosCiudad = useMemo(() => soloActivos(enCiudad), [enCiudad]);
+  const nInactivos = enCiudad.length - activosCiudad.length;
   const cnt = useMemo(() => {
     const c = { validado: 0, corregido: 0, pendiente: 0 };
-    for (const r of enCiudad) c[r.estado]++;
+    for (const r of activosCiudad) c[r.estado]++;
     return c;
-  }, [enCiudad]);
-  const total = enCiudad.length;
+  }, [activosCiudad]);
+  const total = activosCiudad.length;
   const visibles = useMemo(() => {
     const t = fold(q.trim());
-    return enCiudad
+    return visiblesSegunFiltro(enCiudad, mostrarInactivos)
       .filter((r) => filtro === "all" || r.estado === filtro)
       .filter((r) => !t || fold(`${r.nombre} ${r.nombrePropuesto ?? ""} ${r.correo} ${r.correoPropuesto ?? ""} ${r.documento}`).includes(t))
       .sort(compararFilas);
-  }, [enCiudad, filtro, q]);
+  }, [enCiudad, filtro, q, mostrarInactivos]);
 
   const kicker = ciudad || (verTodas ? "Todas las ciudades" : user.ciudades.join(" · "));
   const pct = (n: number) => (total ? `${(n / total) * 100}%` : "0%");
@@ -267,7 +275,7 @@ export default function MonitorPanel({ user, appUrl, inicial }: { user: SessionU
   }
 
   async function copiarPendientes() {
-    const p = enCiudad.filter((r) => r.estado === "pendiente").sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+    const p = activosCiudad.filter((r) => r.estado === "pendiente").sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
     if (!p.length) return showToast("No hay pendientes");
     const txt = `Hola. Estos estudiantes todavía no validan sus datos para el certificado:\n${p.map((r) => `• ${r.nombre}`).join("\n")}\nEntren aquí con su documento: ${appUrl || window.location.origin}`;
     try {
@@ -333,6 +341,9 @@ export default function MonitorPanel({ user, appUrl, inicial }: { user: SessionU
           <span className={s.searchIcon} aria-hidden />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nombre, correo o documento" aria-label="Buscar" />
         </label>
+        {(nInactivos > 0 || mostrarInactivos) && (
+          <div style={{ margin: "10px 0 4px" }}><FiltroInactivos valor={mostrarInactivos} onCambio={setMostrarInactivos} cuantos={nInactivos} /></div>
+        )}
 
         <div className={s.tableHead}><span>Estudiante</span><span>Correo</span><span>Estado</span><span>Validación</span><span /></div>
 
@@ -354,12 +365,12 @@ export default function MonitorPanel({ user, appUrl, inicial }: { user: SessionU
             const nombreVisible = r.nombrePropuesto ?? r.nombre;
             const correoVisible = r.correoPropuesto ?? r.correo;
             return (
-              <div key={r.id} className={s.row}>
+              <div key={r.id} className={`${s.row} ${r.inactivo ? si.filaInactiva : ""}`}>
                 <div className={s.rowGrid}>
                   <div className={s.who}>
                     <i className={`${s.dot} ${s.rowMobileDot}`} style={{ background: st.dot }} />
                     <div className={s.whoText}>
-                      <div className={s.name}>{nombreVisible}</div>
+                      <div className={s.name}>{nombreVisible} <EtiquetaInactivo info={r.inactivo} /></div>
                       <div className={s.doc}>{r.documento}{ciudades.length > 1 && !ciudad ? ` · ${r.ciudad}` : ""}</div>
                     </div>
                   </div>
@@ -390,6 +401,7 @@ export default function MonitorPanel({ user, appUrl, inicial }: { user: SessionU
                         ...(r.estado === "validado" ? [{ label: "Corregir datos", on: () => abrir(r, "editar") }] : []),
                         ...(verHist ? [{ label: "Historial", on: () => verHistorial(r) }] : []),
                         ...(editarTodo ? [{ label: "Editar datos", on: () => abrirEdicion(r) }] : []),
+                        ...(cambiarActivo ? [{ label: r.inactivo ? "Reactivar" : "Inactivar", on: () => setDlgActivo({ documento: r.documento, nombre: nombreVisible, inactivo: r.inactivo }) }] : []),
                       ]}
                     />
                   </div>
@@ -534,7 +546,9 @@ export default function MonitorPanel({ user, appUrl, inicial }: { user: SessionU
                     {g.cambios.map((c, i) => (
                       <div key={i} className={s.histChange}>
                         <span className={s.histField}>{CAMPO_TXT[c.campo]}</span>
-                        {c.campo === "estado" ? (
+                        {c.campo === "activo" ? (
+                          <>{c.anterior === "inactivo" ? "Inactivo" : "Activo"} → <b>{c.nuevo === "inactivo" ? "Inactivo" : "Activo"}</b>{c.motivo ? <> · Motivo: {c.motivo}</> : null}</>
+                        ) : c.campo === "estado" ? (
                           <>{STY[c.anterior as Estado]?.label ?? c.anterior} → <b>{STY[c.nuevo as Estado]?.label ?? c.nuevo}</b></>
                         ) : (
                           <><span className={s.struck}>{c.anterior || "(vacío)"}</span> → <b>{c.nuevo}</b></>
@@ -550,6 +564,11 @@ export default function MonitorPanel({ user, appUrl, inicial }: { user: SessionU
             </div>
           </div>
         </div>
+      )}
+
+      {dlgActivo && (
+        <DialogoActivo persona={dlgActivo} onCerrar={() => setDlgActivo(null)}
+          onListo={(activo) => { const n = dlgActivo.nombre.split(" ")[0]; setDlgActivo(null); cargar(true); showToast(activo ? `${n} quedó activo ✓` : `${n} quedó inactivo`, true); }} />
       )}
 
       {toast && <div className={`${s.toast} ${toast.ok ? s.toastOk : ""}`} role="status">{toast.text}</div>}

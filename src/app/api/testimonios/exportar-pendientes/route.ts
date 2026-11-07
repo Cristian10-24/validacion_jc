@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
+import { pideInactivos } from "@/lib/activo";
 import { exigir } from "@/lib/auth";
 import { puede } from "@/lib/permisos";
 import { archivoPendientes, excelPendientesTestimonios, pendientesParaExportar } from "@/lib/testimonios/exportar";
 import { filasTestimonios } from "@/lib/testimonios/vista";
 
 /**
- * Excel de pendientes de testimonio. ?ciudad= exporta solo esa ciudad.
+ * Excel de pendientes de testimonio. ?ciudad= exporta solo esa ciudad. Sin inactivos; ?inactivos=1 los incluye.
  * Monitor: solo sus ciudades; pedir otra ciudad responde 403 (validado aquí, no solo en la interfaz). Solo lectura.
  */
 export async function GET(req: Request) {
@@ -16,7 +17,7 @@ export async function GET(req: Request) {
   if (ciudad && !puede(g.user.rol, "ver_todas_las_ciudades") && !g.user.ciudades.includes(ciudad)) {
     return NextResponse.json({ error: "sin_permiso", mensaje: "Solo puedes exportar los pendientes de tus ciudades." }, { status: 403 });
   }
-  const filas = pendientesParaExportar(await filasTestimonios(g.user), ciudad);
+  const filas = pendientesParaExportar(await filasTestimonios(g.user), ciudad, pideInactivos(req.url));
   return new NextResponse(new Uint8Array(await excelPendientesTestimonios(filas)), {
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

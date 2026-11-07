@@ -1,5 +1,6 @@
 // Avance de la clausura por ciudad: cuántos respondieron de cuántos y qué respondieron en asistencia. Solo LEE.
-// Monitor: solo sus ciudades; coordinación y admin: todas (el filtro va en la consulta).
+// Monitor: solo sus ciudades; coordinación y admin: todas (el filtro va en la consulta). Los inactivos no cuentan.
+import { SOLO_ACTIVOS } from "@/lib/activo";
 import type { SessionUser } from "@/lib/auth";
 import { clausura } from "./db";
 import { formularioActivo, formularioDe, modoProyecto } from "./evento";
@@ -26,7 +27,7 @@ export async function resumenClausura(user: Pick<SessionUser, "rol" | "ciudades"
   for (const e of lista) {
     const f = formularioDe(e, formularioActivo(e, e.formulario));
     const pa = e.preguntaAsistencia ? preguntasDe(f).get(e.preguntaAsistencia) : undefined;
-    const alumnos = await estudiantes.find(alcanceEvento(e, user), { projection: { ciudad: 1 } }).toArray();
+    const alumnos = await estudiantes.find({ ...alcanceEvento(e, user), ...SOLO_ACTIVOS }, { projection: { ciudad: 1 } }).toArray();
     const resp = await respuestas.find({ eventoId: e._id, studentId: { $in: alumnos.map((a) => a._id) } }).toArray();
     const porAlumno = new Map(resp.map((r) => [r.studentId.toHexString(), r]));
     for (const ciudad of [...new Set(alumnos.map((a) => a.ciudad))].sort((a, b) => a.localeCompare(b, "es"))) {

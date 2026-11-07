@@ -51,6 +51,8 @@ const soloAdmin: [string, () => Promise<Response>][] = [
   ["editar usuario", async () => (await import("@/app/api/admin/usuarios/[id]/route")).PATCH(json("PATCH", { rol: "admin" }), ctx)],
   ["restablecer clave", async () => (await import("@/app/api/admin/usuarios/[id]/clave/route")).POST(json("POST", {}), ctx)],
   ["exportar pendientes", async () => (await import("@/app/api/admin/exportar-pendientes/route")).GET(new Request("http://localhost/api/admin/exportar-pendientes"))],
+  ["inactivar a un estudiante", async () => (await import("@/app/api/admin/estudiantes/activo/route")).POST(json("POST", { documento: "999", activo: false, motivo: "Se retiró" }))],
+  ["reactivar a un estudiante", async () => (await import("@/app/api/admin/estudiantes/activo/route")).POST(json("POST", { documento: "999", activo: true }))],
   ["editar el documento de un estudiante", async () => (await import("@/app/api/admin/estudiantes/[id]/route")).PATCH(json("PATCH", { documento: "999", nombre: "Ana Ruiz", correo: "a@gmail.com", ciudad: "Cali", grupo: "", estado: "validado" }), ctx)],
 ];
 
@@ -88,6 +90,8 @@ describe("matriz de permisos", () => {
     clausura_exportar: [true, true, true],
     clausura_resumen: [true, true, true],
     clausura_gestionar: [false, false, true],
+    // Fase 8: inactivar y reactivar estudiantes, solo admin. Todos ven la etiqueta y el filtro.
+    estudiantes_activo: [false, false, true],
   };
   for (const [permiso, esperado] of Object.entries(tabla))
     it(permiso, () => expect(ROLES.map((r) => puede(r, permiso as Permiso))).toEqual(esperado));

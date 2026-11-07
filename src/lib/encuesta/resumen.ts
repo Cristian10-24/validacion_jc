@@ -1,4 +1,5 @@
 // Avance de la encuesta final por ciudad. Solo lectura. Mismo esquema que el avance de testimonios.
+import { soloActivos } from "@/lib/activo";
 import type { SessionUser } from "@/lib/auth";
 import { puede } from "@/lib/permisos";
 import { monitoresPorCiudad } from "@/lib/testimonios/usuarios-lectura";
@@ -18,11 +19,11 @@ function sumar(c: ConteoEncuesta, f: Pick<FilaEncuesta, "estado" | "conComentari
   if (f.estado === "pendiente" && f.conComentarios) c.conComentarios++;
 }
 
-/** Conteos por ciudad, de menor a mayor avance (a igual avance, alfabético). Función pura. */
-export function contarEncuestaPorCiudad(filas: Pick<FilaEncuesta, "ciudad" | "estado" | "conComentarios">[], monitores = new Map<string, string[]>()): { total: ConteoEncuesta; ciudades: CiudadEncuesta[] } {
+/** Conteos por ciudad, de menor a mayor avance (a igual avance, alfabético). Los inactivos no cuentan. Función pura. */
+export function contarEncuestaPorCiudad(filas: (Pick<FilaEncuesta, "ciudad" | "estado" | "conComentarios"> & Partial<Pick<FilaEncuesta, "inactivo">>)[], monitores = new Map<string, string[]>()): { total: ConteoEncuesta; ciudades: CiudadEncuesta[] } {
   const total = vacio();
   const por = new Map<string, CiudadEncuesta>();
-  for (const f of filas) {
+  for (const f of soloActivos(filas)) {
     const c = por.get(f.ciudad) ?? { ciudad: f.ciudad, ...vacio(), monitores: monitores.get(f.ciudad) ?? [] };
     sumar(c, f);
     sumar(total, f);

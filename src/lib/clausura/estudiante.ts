@@ -3,6 +3,7 @@
 // Regla: el correo y el celular completos NUNCA salen en las respuestas al estudiante (solo ocultos).
 import { ObjectId } from "mongodb";
 import { z } from "zod";
+import { esInactivo } from "@/lib/activo";
 import type { Student } from "@/lib/types";
 import { checkEmail, emailError } from "@/lib/validation/email";
 import { normalizeDocumento } from "@/lib/validation/name";
@@ -13,8 +14,8 @@ import { claveOtro, esPregunta, type Respuestas } from "./formulario/esquema";
 import { camino, siguienteSeccion, validarRespuestas } from "./formulario/motor";
 import type { SesionClausura } from "./sesion";
 
-const PROYECCION = { documento: 1, ciudad: 1, grupo: 1, nombre: 1, nombrePropuesto: 1, correo: 1, correoPropuesto: 1, estado: 1 } as const;
-export type EstudianteLeido = Pick<Student, "_id" | "documento" | "ciudad" | "grupo" | "nombre" | "nombrePropuesto" | "correo" | "correoPropuesto" | "estado">;
+const PROYECCION = { documento: 1, ciudad: 1, grupo: 1, nombre: 1, nombrePropuesto: 1, correo: 1, correoPropuesto: 1, estado: 1, activo: 1 } as const;
+export type EstudianteLeido = Pick<Student, "_id" | "documento" | "ciudad" | "grupo" | "nombre" | "nombrePropuesto" | "correo" | "correoPropuesto" | "estado" | "activo">;
 
 export type Contexto = { student: EstudianteLeido; evento: Evento; respuesta: RespuestaClausura | null; celularMostrado: string | null };
 
@@ -31,6 +32,7 @@ async function celularDe(documento: string): Promise<string | null> {
 export type ResultadoIngreso =
   | { tipo: "no_encontrado" }
   | { tipo: "pronto" }
+  | { tipo: "inactivo" }
   | { tipo: "ok"; ctx: Contexto };
 
 /** Busca al estudiante por documento y el evento de SU ciudad (sin importar por cuál enlace entró). */
@@ -40,6 +42,8 @@ export async function ingresar(documentoEscrito: string): Promise<ResultadoIngre
   const { estudiantes, eventos, respuestas } = await clausura();
   const student = (await estudiantes.findOne({ documento }, { projection: PROYECCION })) as EstudianteLeido | null;
   if (!student) return { tipo: "no_encontrado" };
+  // Inactivo: no entra al formulario; ve "Escríbele a tu monitor".
+  if (esInactivo(student)) return { tipo: "inactivo" };
   const evento = eventoParaCiudad(await eventos.find({ estado: { $in: ["abierto", "cerrado"] } }).toArray(), student.ciudad);
   if (!evento) return { tipo: "pronto" };
   const [respuesta, celularMostrado] = await Promise.all([
@@ -53,7 +57,7 @@ export async function ingresar(documentoEscrito: string): Promise<ResultadoIngre
 export async function cargar(s: SesionClausura): Promise<Contexto | null> {
   const { estudiantes, eventos, respuestas } = await clausura();
   const student = (await estudiantes.findOne({ _id: new ObjectId(s.studentId) }, { projection: PROYECCION })) as EstudianteLeido | null;
-  if (!student) return null;
+  if (!student || esInactivo(student)) return null;
   const evento = eventoParaCiudad(await eventos.find({ estado: { $in: ["abierto", "cerrado"] } }).toArray(), student.ciudad);
   if (!evento || evento._id.toHexString() !== s.eventoId) return null;
   const [respuesta, celularMostrado] = await Promise.all([

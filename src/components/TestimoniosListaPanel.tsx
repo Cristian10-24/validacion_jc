@@ -5,6 +5,7 @@ import type { SessionUser } from "@/lib/auth";
 import type { ResultadoLista } from "@/lib/testimonios/lista-aplicar";
 import type { CambioLista, PlanLista } from "@/lib/testimonios/lista";
 import AppShell from "./AppShell";
+import { estilosInactivos } from "./Inactivos";
 import s from "./ImportPanel.module.css";
 
 const CAMPO: Record<CambioLista["campo"], string> = { nombres: "Nombres", apellidos: "Apellidos", celular: "Celular", correo: "Correo", ciudad: "Ciudad", ciudadOriginal: "Ciudad escrita" };
@@ -59,6 +60,7 @@ export default function TestimoniosListaPanel({ user }: { user: SessionUser }) {
     setEliminar((prev) => { const m = new Set(prev); if (m.has(id)) m.delete(id); else m.add(id); return m; });
   }
 
+  const quedanInactivos = new Map((plan?.quedanInactivos ?? []).map((q) => [q.documento, q.motivo]));
   const nada = plan && plan.nuevos.length + plan.cambiados.length + eliminar.size === 0;
   const stats: [string, string, number, string][] = plan ? [
     ["nuevos", "Nuevos", plan.nuevos.length, "var(--green)"],
@@ -81,7 +83,7 @@ export default function TestimoniosListaPanel({ user }: { user: SessionUser }) {
         <div className={s.result} role="status">
           <div className={s.resultTitle}>Lista actualizada ✓</div>
           <ul className={s.resultList}>
-            <li>{n(resultado.insertados, "participante nuevo", "participantes nuevos")}</li>
+            <li>{n(resultado.insertados, "participante nuevo", "participantes nuevos")}{resultado.inactivos > 0 && ` (${n(resultado.inactivos, "quedó inactivo", "quedaron inactivos")})`}</li>
             <li>{n(resultado.actualizados, "participante actualizado", "participantes actualizados")}</li>
             <li>{n(resultado.eliminados, "eliminado", "eliminados")}</li>
             <li>{n(resultado.recruzadas, "respuesta cambió de dueño al volver a cruzar", "respuestas cambiaron de dueño al volver a cruzar")}</li>
@@ -132,9 +134,14 @@ export default function TestimoniosListaPanel({ user }: { user: SessionUser }) {
           {plan.nuevos.length > 0 && (
             <details id="nuevos" className={s.section} open={plan.nuevos.length <= 30}>
               <summary><span className={s.secTitle}><i className={s.dot} style={{ background: "var(--green)" }} />Nuevos ({plan.nuevos.length})</span></summary>
+              {quedanInactivos.size > 0 && (
+                <div className={s.item}><div className={s.itemSub}>
+                  {n(quedanInactivos.size, "quedará inactivo", "quedarán inactivos")}: {quedanInactivos.size === 1 ? "ya está inactivo en validación y se crea" : "ya están inactivos en validación y se crean"} con el mismo motivo, fecha y autor.
+                </div></div>
+              )}
               {plan.nuevos.map((f) => (
                 <div key={f.documento} className={s.item}>
-                  <div className={s.itemTop}><span className={s.itemName}>{f.nombre}</span><span className={s.itemMeta}>{f.documento} · {f.ciudad}{f.ciudadOriginal ? ` (${f.ciudadOriginal})` : ""}</span></div>
+                  <div className={s.itemTop}><span className={s.itemName}>{f.nombre}{quedanInactivos.has(f.documento) && <> <span className={estilosInactivos.etiqueta} title={`Motivo: ${quedanInactivos.get(f.documento)}`}>Inactivo</span></>}</span><span className={s.itemMeta}>{f.documento} · {f.ciudad}{f.ciudadOriginal ? ` (${f.ciudadOriginal})` : ""}</span></div>
                   <div className={s.itemSub}>{[f.correo || "(sin correo)", f.celular || "(sin celular)"].join(" · ")}</div>
                 </div>
               ))}
@@ -196,7 +203,7 @@ export default function TestimoniosListaPanel({ user }: { user: SessionUser }) {
 
           <div className={s.bar}>
             <div className={s.barText}>
-              {nada ? "No hay nada que aplicar." : <>Se crearán <b>{plan.nuevos.length}</b> · se actualizarán <b>{plan.cambiados.length}</b> · se eliminarán <b>{eliminar.size}</b></>}
+              {nada ? "No hay nada que aplicar." : <>Se crearán <b>{plan.nuevos.length}</b>{quedanInactivos.size > 0 && <> ({quedanInactivos.size} {quedanInactivos.size === 1 ? "quedará inactivo" : "quedarán inactivos"})</>} · se actualizarán <b>{plan.cambiados.length}</b> · se eliminarán <b>{eliminar.size}</b></>}
             </div>
             <button type="button" className="btn btn-primary" disabled={!!nada} onClick={() => setConfirmar(true)}>Aplicar cambios</button>
           </div>
@@ -208,7 +215,7 @@ export default function TestimoniosListaPanel({ user }: { user: SessionUser }) {
           <div className={s.modal} role="dialog" aria-modal="true" aria-labelledby="tl-conf">
             <div id="tl-conf" className={s.modalTitle}>¿Aplicar la nueva lista?</div>
             <ul className={s.modalList}>
-              <li>{n(plan.nuevos.length, "participante nuevo", "participantes nuevos")}</li>
+              <li>{n(plan.nuevos.length, "participante nuevo", "participantes nuevos")}{quedanInactivos.size > 0 && ` (${n(quedanInactivos.size, "quedará inactivo", "quedarán inactivos")})`}</li>
               <li>{n(plan.cambiados.length, "participante actualizado", "participantes actualizados")}</li>
               <li>{n(eliminar.size, "eliminado", "eliminados")}</li>
               <li>Después se vuelven a cruzar las respuestas del formulario.</li>

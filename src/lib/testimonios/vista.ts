@@ -1,6 +1,7 @@
 // Lectura de la vista "Testimonios" según el usuario. Solo LEE colecciones testimonios_*.
 // El alcance por ciudad se valida en el servidor: un monitor solo ve participantes de sus ciudades.
 import type { Filter } from "mongodb";
+import { infoInactivo, type InfoInactivo } from "@/lib/activo";
 import type { SessionUser } from "@/lib/auth";
 import { puede } from "@/lib/permisos";
 import { testimonios, type Participante } from "./db";
@@ -30,6 +31,8 @@ export type FilaTestimonio = {
   ultimoComentario: number | null;
   /** true si esa actividad más reciente es una edición: se muestra "(editado)". */
   ultimoComentarioEditado: boolean;
+  /** null si está activo. Los inactivos vienen en la lista (filtro "Mostrar inactivos") pero no cuentan. */
+  inactivo: InfoInactivo;
 };
 
 export async function filasTestimonios(user: Pick<SessionUser, "rol" | "ciudades">): Promise<FilaTestimonio[]> {
@@ -65,6 +68,7 @@ export async function filasTestimonios(user: Pick<SessionUser, "rol" | "ciudades
       ultimoEnvio: ev[0] ? Date.parse(ev[0].fecha ?? ev[0].recibidaEn) : null,
       ultimoComentario: ua?.ms ?? null,
       ultimoComentarioEditado: ua?.editado ?? false,
+      inactivo: infoInactivo(p),
     };
   });
 }

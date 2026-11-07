@@ -18,10 +18,10 @@ export function textoComentario(c: { texto: string; fecha: string; editadoEn?: s
   return `${cuando}${editado ? " (editado)" : ""} · ${c.autor.nombre}: ${c.texto.replace(/\s*\n\s*/g, " ")}`;
 }
 
-/** Todos los pendientes, de una ciudad si se indica. Orden: ciudad, primero los sin comentarios, nombre. */
-export function pendientesParaExportar(filas: FilaTestimonio[], ciudad?: string): FilaPendienteTestimonio[] {
+/** Todos los pendientes, de una ciudad si se indica; sin inactivos salvo que se pidan. Orden: ciudad, primero los sin comentarios, nombre. */
+export function pendientesParaExportar(filas: FilaTestimonio[], ciudad?: string, incluirInactivos = false): FilaPendienteTestimonio[] {
   return filas
-    .filter((f) => f.estado === "pendiente" && (!ciudad || f.ciudad === ciudad))
+    .filter((f) => f.estado === "pendiente" && (!ciudad || f.ciudad === ciudad) && (incluirInactivos || !f.inactivo))
     .map((f): FilaPendienteTestimonio => {
       const ua = ultimaActividad(f.comentarios);
       return {

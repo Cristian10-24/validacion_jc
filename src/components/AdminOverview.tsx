@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import type { CiudadResumen } from "@/app/api/admin/resumen/route";
 import type { SessionUser } from "@/lib/auth";
 import AppShell from "./AppShell";
+import { IncluirInactivos, paramInactivos } from "./Inactivos";
 import s from "./AdminOverview.module.css";
 
-type Resumen = { total: { total: number; validado: number; corregido: number; pendiente: number }; ciudades: CiudadResumen[]; actualizado: string };
+type Resumen = { total: { total: number; validado: number; corregido: number; pendiente: number; inactivos: number }; ciudades: CiudadResumen[]; actualizado: string };
 type Descarga = { estado: "idle" } | { estado: "loading" } | { estado: "done"; archivo: string; filas: number } | { estado: "error" };
 
 const REFRESCO_MS = 30_000;
@@ -18,6 +19,7 @@ export default function AdminOverview({ user }: { user: SessionUser }) {
   const [data, setData] = useState<Resumen | null>(null);
   const [error, setError] = useState(false);
   const [dl, setDl] = useState<Descarga>({ estado: "idle" });
+  const [conInactivos, setConInactivos] = useState(false);
 
   async function cargar(silencioso = false) {
     try {
@@ -42,7 +44,7 @@ export default function AdminOverview({ user }: { user: SessionUser }) {
   async function descargar() {
     setDl({ estado: "loading" });
     try {
-      const res = await fetch("/api/admin/exportar", { cache: "no-store" });
+      const res = await fetch(`/api/admin/exportar${paramInactivos(conInactivos, "?")}`, { cache: "no-store" });
       if (!res.ok) throw new Error();
       const archivo = /filename="([^"]+)"/.exec(res.headers.get("Content-Disposition") ?? "")?.[1] ?? "certificados_jovenes_creativos.xlsx";
       const filas = Number(res.headers.get("X-Filas") ?? 0);
@@ -82,6 +84,7 @@ export default function AdminOverview({ user }: { user: SessionUser }) {
               <span><i className={s.dot} style={{ background: "#3DD598" }} />{t.validado} {t.validado === 1 ? "validado" : "validados"}</span>
               <span><i className={s.dot} style={{ background: "var(--yellow)" }} />{t.corregido} {t.corregido === 1 ? "corregido" : "corregidos"}</span>
               <span><i className={s.dot} style={{ background: "#FF7A85" }} />{t.pendiente} {t.pendiente === 1 ? "pendiente" : "pendientes"}</span>
+              {t.inactivos > 0 && <span title="No cuentan en el total ni en el porcentaje">· {t.inactivos} {t.inactivos === 1 ? "inactivo" : "inactivos"} (no cuentan)</span>}
             </div>
           )}
         </section>
@@ -91,7 +94,9 @@ export default function AdminOverview({ user }: { user: SessionUser }) {
           <div className={s.finalText}>
             Excel con dos pestañas: los datos originales de todos y los datos de los <b>{t?.validado ?? "–"} validados</b>, cruzables por ID.
             {t && t.corregido > 0 && <> Los {t.corregido} corregidos entran cuando su monitor los apruebe.</>}
+            {t && t.inactivos > 0 && !conInactivos && <> Los {t.inactivos} inactivos no salen.</>}
           </div>
+          {t && t.inactivos > 0 && <IncluirInactivos valor={conInactivos} onCambio={setConInactivos} />}
           <div style={{ flex: 1 }} />
           {(dl.estado === "idle" || dl.estado === "error") && (
             <>

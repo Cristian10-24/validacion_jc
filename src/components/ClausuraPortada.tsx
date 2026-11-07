@@ -478,4 +478,16 @@ export function EstadoPronto({ privacyUrl, volver }: { privacyUrl: string; volve
   );
 }
 
+/** Estudiante inactivo: no entra al formulario. Mismo trato que en validación. */
+export function EstadoInactivo({ privacyUrl, volver }: { privacyUrl: string; volver: () => void }) {
+  return (
+    <Estado privacyUrl={privacyUrl}>
+      <div className={p.estadoKicker}>Necesitamos revisar algo</div>
+      <h1 className={p.estadoTitulo}>Escríbele a tu monitor</h1>
+      <p className={p.estadoTexto}>Tu monitor te ayuda a revisar tu confirmación para la clausura.</p>
+      <div className={p.acciones}><button type="button" className={p.botonSecundario} onClick={volver}>Volver al inicio</button></div>
+    </Estado>
+  );
+}
+
 export { p as estilosPortada };

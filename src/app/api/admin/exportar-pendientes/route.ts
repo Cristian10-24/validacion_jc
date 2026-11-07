@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { pideInactivos } from "@/lib/activo";
 import { exigir } from "@/lib/auth";
 import { collections } from "@/lib/db";
 import { excelPendientes, filasPendientes } from "@/lib/export";
@@ -10,7 +11,7 @@ export async function GET(req: Request) {
 
   const ciudad = new URL(req.url).searchParams.get("ciudad")?.trim().slice(0, 80) || undefined;
   const { students } = await collections();
-  const filas = await filasPendientes(students, ciudad);
+  const filas = await filasPendientes(students, ciudad, pideInactivos(req.url));
   const hoy = new Date().toLocaleDateString("sv-SE", { timeZone: "America/Bogota" });
   const sufijo = ciudad ? `_${ciudad.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "")}` : "";
   const archivo = `pendientes${sufijo}_${hoy}.xlsx`;

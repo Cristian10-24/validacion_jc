@@ -25,6 +25,19 @@ export type Student = {
   validadoEn?: Date;
   creadoEn: Date;
   actualizadoEn: Date;
+} & DatosActivo;
+
+/**
+ * Estado activo/inactivo (students y testimonios_participantes). Sin migración: sin el campo = activo.
+ * Al reactivar queda activo: true y se conservan los datos del último cambio.
+ */
+export type DatosActivo = {
+  activo?: boolean;
+  inactivoMotivo?: string;
+  inactivoEn?: Date;
+  inactivoPor?: { usuario: string; nombre: string; rol: string };
+  reactivadoEn?: Date;
+  reactivadoPor?: { usuario: string; nombre: string; rol: string };
 };
 
 export type User = {
@@ -45,11 +58,13 @@ export type ChangeLog = {
   _id?: ObjectId;
   studentId: ObjectId;
   documento: string;
-  campo: "nombre" | "correo" | "estado" | "documento" | "ciudad" | "grupo";
+  campo: "nombre" | "correo" | "estado" | "documento" | "ciudad" | "grupo" | "activo";
   anterior: string;
   nuevo: string;
   actor: Actor;
-  accion: "confirmar" | "corregir" | "aprobar" | "editar" | "validar_en_nombre" | "importar" | "eliminar" | "editar_admin";
+  /** Solo al inactivar: por qué. */
+  motivo?: string;
+  accion: "confirmar" | "corregir" | "aprobar" | "editar" | "validar_en_nombre" | "importar" | "eliminar" | "editar_admin" | "inactivar" | "activar";
   fecha: Date;
 };
 

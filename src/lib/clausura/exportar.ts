@@ -3,6 +3,7 @@
 // Hoja "Preguntas" con el ID, el evento, la sección, el texto y el tipo. Solo LEE. Monitor: solo sus ciudades.
 import ExcelJS from "exceljs";
 import { ObjectId } from "mongodb";
+import { filtroActivos } from "@/lib/activo";
 import type { SessionUser } from "@/lib/auth";
 import { celularConIndicativo } from "@/lib/testimonios/celular";
 import type { Student } from "@/lib/types";
@@ -18,7 +19,7 @@ const fecha = (d: Date | null | undefined) => (d ? d.toLocaleString("es-CO", { t
 type Columna = { id: string; titulo: string };
 type FilaExcel = { base: string[]; r: RespuestaClausura | undefined; preguntas: Map<string, Pregunta> };
 
-export async function excelClausura(user: Pick<SessionUser, "rol" | "ciudades">, opciones: { evento: string; sinResponder: boolean }) {
+export async function excelClausura(user: Pick<SessionUser, "rol" | "ciudades">, opciones: { evento: string; sinResponder: boolean; incluirInactivos?: boolean }) {
   const { eventos, estudiantes, respuestas, comentarios } = await clausura();
   let lista = eventosVisibles(await eventos.find({ estado: { $ne: "borrador" } }).sort({ inicio: 1 }).toArray(), user);
   if (opciones.evento !== "todos") lista = lista.filter((e) => e._id.toHexString() === opciones.evento);
@@ -30,7 +31,7 @@ export async function excelClausura(user: Pick<SessionUser, "rol" | "ciudades">,
   const filas: FilaExcel[] = [];
 
   for (const e of lista) {
-    const alumnos = (await estudiantes.find(alcanceEvento(e, user), { projection: { documento: 1, nombre: 1, nombrePropuesto: 1, ciudad: 1, grupo: 1, correo: 1, correoPropuesto: 1 } })
+    const alumnos = (await estudiantes.find({ ...alcanceEvento(e, user), ...filtroActivos(!!opciones.incluirInactivos) }, { projection: { documento: 1, nombre: 1, nombrePropuesto: 1, ciudad: 1, grupo: 1, correo: 1, correoPropuesto: 1 } })
       .sort({ ciudad: 1, nombre: 1 }).toArray()) as Pick<Student, "_id" | "documento" | "nombre" | "nombrePropuesto" | "ciudad" | "grupo" | "correo" | "correoPropuesto">[];
     const resp = await respuestas.find({ eventoId: e._id, studentId: { $in: alumnos.map((a) => a._id) } }).toArray();
     const porAlumno = new Map(resp.map((r) => [r.studentId.toHexString(), r]));

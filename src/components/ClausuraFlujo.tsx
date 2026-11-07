@@ -13,14 +13,14 @@ import { preguntasDe } from "@/lib/clausura/formulario/motor";
 import { textoRespuesta } from "@/lib/clausura/formulario/mostrar";
 import type { PreguntaFrecuente } from "@/lib/clausura/presentacion";
 import ClausuraTexto from "./ClausuraTexto";
-import { EstadoEnviada, EstadoOtraCiudad, EstadoPronto, EstadoVencida, PaginaCiudad, PaginaGeneral, estilosPortada as pp, type EventoPortada, type Ingreso } from "./ClausuraPortada";
+import { EstadoEnviada, EstadoInactivo, EstadoOtraCiudad, EstadoPronto, EstadoVencida, PaginaCiudad, PaginaGeneral, estilosPortada as pp, type EventoPortada, type Ingreso } from "./ClausuraPortada";
 import s from "./StudentFlow.module.css";
 import c from "./Clausura.module.css"; // después de StudentFlow: sus reglas ganan
 
 // Portal de clausura del estudiante: portada del evento → documento → contacto → secciones → resumen → éxito.
 // Todo lo importante lo decide el servidor (camino, validación, ciudad); aquí solo se usa el motor para la experiencia.
 
-type Pantalla = "portada" | "cargando" | "contacto" | "seccion" | "resumen" | "exito" | "ver" | "pronto" | "noEncontrado" | "cerrado" | "otraCiudad";
+type Pantalla = "portada" | "cargando" | "contacto" | "seccion" | "resumen" | "exito" | "ver" | "pronto" | "noEncontrado" | "cerrado" | "otraCiudad" | "inactivo";
 
 const RED_NET = "No pudimos conectarnos. Revisa tu internet e intenta otra vez.";
 const SESION = "Pasó mucho tiempo sin actividad. Escribe tu documento otra vez para seguir donde ibas.";
@@ -248,6 +248,7 @@ export default function ClausuraFlujo({ evento, eventos = [], faq = [], privacyU
     if (r.status === 429) { setPantalla("portada"); return setDocErr(String(r.data.mensaje ?? "Demasiados intentos. Espera unos minutos.")); }
     if (r.status !== 200) { setPantalla("portada"); return setDocErr("Algo salió mal. Intenta otra vez."); }
     if (r.data.resultado === "pronto") return ir("pronto");
+    if (r.data.resultado === "inactivo") return ir("inactivo");
     setDocErr("");
     aplicar(r.data as unknown as VistaEstudiante);
   }
@@ -394,6 +395,7 @@ export default function ClausuraFlujo({ evento, eventos = [], faq = [], privacyU
   }
   if (pantalla === "cerrado" && ev) return <EstadoVencida ev={sinForm(ev)} privacyUrl={privacyUrl} salir={botonSalir} />;
   if (pantalla === "pronto") return <EstadoPronto privacyUrl={privacyUrl} volver={salir} />;
+  if (pantalla === "inactivo") return <EstadoInactivo privacyUrl={privacyUrl} volver={salir} />;
 
   // ----- Pantallas del formulario (contacto, secciones y resumen) -----
   const textos: Partial<Record<Pantalla, [string, string, string]>> = {

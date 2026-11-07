@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { esInactivo } from "@/lib/activo";
 import { collections } from "@/lib/db";
 import { studentPortalOpen } from "@/lib/portal";
 import { bloqueado, MENSAJE_BLOQUEO, registrarFallo } from "@/lib/rateLimit";
@@ -22,6 +23,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "no_encontrado" }, { status: 404 });
   }
 
+  // Inactivo: no se muestra ningún dato, solo "Escríbele a tu monitor".
+  if (esInactivo(student)) return NextResponse.json({ error: "inactivo" }, { status: 409 });
   if (student.estado === "validado")
     return NextResponse.json({ estado: "validado", nombre: student.nombre, correo: student.correo, validadoEn: student.validadoEn ?? null });
   return NextResponse.json(studentView(student));

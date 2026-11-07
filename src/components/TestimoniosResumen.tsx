@@ -5,6 +5,7 @@ import type { SessionUser } from "@/lib/auth";
 import type { ResumenTestimonios } from "@/lib/testimonios/resumen";
 import AppShell from "./AppShell";
 import { descargarPendientesTestimonios } from "./TestimoniosPanel";
+import { IncluirInactivos } from "./Inactivos";
 import s from "./AdminOverview.module.css";
 
 type Descarga = { estado: "idle" } | { estado: "loading" } | { estado: "done"; archivo: string; filas: number } | { estado: "error" };
@@ -19,6 +20,7 @@ export default function TestimoniosResumen({ user }: { user: SessionUser }) {
   const [data, setData] = useState<ResumenTestimonios | null>(null);
   const [error, setError] = useState(false);
   const [dl, setDl] = useState<Descarga>({ estado: "idle" });
+  const [conInactivos, setConInactivos] = useState(false);
 
   async function cargar(silencioso = false) {
     try {
@@ -43,7 +45,7 @@ export default function TestimoniosResumen({ user }: { user: SessionUser }) {
   async function exportar() {
     setDl({ estado: "loading" });
     try {
-      setDl({ estado: "done", ...(await descargarPendientesTestimonios("")) });
+      setDl({ estado: "done", ...(await descargarPendientesTestimonios("", conInactivos)) });
     } catch {
       setDl({ estado: "error" });
     }
@@ -90,6 +92,7 @@ export default function TestimoniosResumen({ user }: { user: SessionUser }) {
             <div className={s.finalText}>
               Excel de los <b>{t?.pendiente ?? "–"} pendientes</b> (con y sin comentarios), con celular con indicativo y su último comentario.
             </div>
+            <IncluirInactivos valor={conInactivos} onCambio={setConInactivos} />
             {(dl.estado === "idle" || dl.estado === "error") && (
               <>
                 {dl.estado === "error" && <div className={s.errBox}>No pudimos generar el archivo. Revisa tu conexión e intenta otra vez.</div>}

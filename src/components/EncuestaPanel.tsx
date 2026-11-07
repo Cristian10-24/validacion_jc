@@ -7,7 +7,9 @@ import type { ComentarioVista, EstadoEncuesta, FilaEncuesta } from "@/lib/encues
 import { puede, ROL_TXT, type RolUsuario } from "@/lib/permisos";
 import { celularConIndicativo } from "@/lib/testimonios/celular";
 import { ultimaActividad } from "@/lib/testimonios/estado";
+import { soloActivos, visiblesSegunFiltro } from "@/lib/activo";
 import AppShell from "./AppShell";
+import { EtiquetaInactivo, FiltroInactivos, estilosInactivos as si } from "./Inactivos";
 import m from "./MonitorPanel.module.css";
 import t from "./TestimoniosPanel.module.css";
 
@@ -68,6 +70,7 @@ export default function EncuestaPanel({ user, inicial }: { user: SessionUser; in
   const [guardando, setGuardando] = useState(false);
   const [errorNota, setErrorNota] = useState("");
   const [edicion, setEdicion] = useState<{ id: string; texto: string } | null>(null);
+  const [mostrarInactivos, setMostrarInactivos] = useState(false);
   const [errorEdicion, setErrorEdicion] = useState("");
   const [toast, setToast] = useState<{ text: string; ok?: boolean } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -104,19 +107,22 @@ export default function EncuestaPanel({ user, inicial }: { user: SessionUser; in
   const ciudades = useMemo(() => [...new Set((filas ?? []).map((f) => f.ciudad))].sort((a, b) => a.localeCompare(b, "es")), [filas]);
   useEffect(() => { if (filas && ciudad && !ciudades.includes(ciudad)) setCiudad(""); }, [filas, ciudad, ciudades]);
   const enCiudad = useMemo(() => (filas ?? []).filter((f) => !ciudad || f.ciudad === ciudad), [filas, ciudad]);
-  const buscadas = useMemo(() => buscarEncuesta(enCiudad, q), [enCiudad, q]);
+  // Los inactivos no cuentan en totales ni porcentajes; solo se ven con "Mostrar inactivos".
+  const activosCiudad = useMemo(() => soloActivos(enCiudad), [enCiudad]);
+  const nInactivos = enCiudad.length - activosCiudad.length;
+  const buscadas = useMemo(() => buscarEncuesta(visiblesSegunFiltro(enCiudad, mostrarInactivos), q), [enCiudad, q, mostrarInactivos]);
   const cnt = useMemo(() => {
     const c = { respondio: 0, pendiente: 0, comentarios: 0 };
-    for (const f of enCiudad) {
+    for (const f of activosCiudad) {
       c[f.estado]++;
       if (f.estado === "pendiente" && f.conComentarios) c.comentarios++;
     }
     return c;
-  }, [enCiudad]);
+  }, [activosCiudad]);
   const visibles = useMemo(() => buscadas.filter((f) =>
     filtro === "all" || (filtro === "comentarios" ? f.estado === "pendiente" && f.conComentarios : f.estado === filtro)).sort(compararEncuesta), [buscadas, filtro]);
-  const pendientes = useMemo(() => buscadas.filter((f) => f.estado === "pendiente").sort((a, b) => a.nombre.localeCompare(b.nombre, "es")), [buscadas]);
-  const total = enCiudad.length;
+  const pendientes = useMemo(() => soloActivos(buscadas).filter((f) => f.estado === "pendiente").sort((a, b) => a.nombre.localeCompare(b.nombre, "es")), [buscadas]);
+  const total = activosCiudad.length;
   const pct = (n: number) => (total ? `${(n / total) * 100}%` : "0%");
   const abierta = filas?.find((f) => f.id === detalle) ?? null;
 
@@ -215,6 +221,9 @@ export default function EncuestaPanel({ user, inicial }: { user: SessionUser; in
         <span className={m.searchIcon} aria-hidden />
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nombre, documento, correo o celular" aria-label="Buscar" />
       </label>
+      {(nInactivos > 0 || mostrarInactivos) && (
+        <div style={{ margin: "10px 0 4px" }}><FiltroInactivos valor={mostrarInactivos} onCambio={setMostrarInactivos} cuantos={nInactivos} /></div>
+      )}
 
       <div className={t.tableHead}><span>Participante</span><span>Contacto</span><span>Estado</span><span>Respuesta</span><span /></div>
 
@@ -231,12 +240,12 @@ export default function EncuestaPanel({ user, inicial }: { user: SessionUser; in
         {visibles.map((f) => {
           const st = STY[f.estado];
           return (
-            <div key={f.id} className={t.row}>
+            <div key={f.id} className={`${t.row} ${f.inactivo ? si.filaInactiva : ""}`}>
               <div className={t.rowGrid}>
                 <div className={t.who}>
                   <i className={`${t.dot} ${t.mobileDot}`} style={{ background: st.dot }} />
                   <div className={t.whoText}>
-                    <div className={t.name}>{f.nombre}</div>
+                    <div className={t.name}>{f.nombre} <EtiquetaInactivo info={f.inactivo} /></div>
                     <div className={t.doc}>{f.documento} · {f.ciudad}{f.ciudadOriginal ? <span className={t.alias}> ({f.ciudadOriginal})</span> : null}</div>
                   </div>
                 </div>

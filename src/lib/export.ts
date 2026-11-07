@@ -1,5 +1,6 @@
 import ExcelJS from "exceljs";
 import type { Collection } from "mongodb";
+import { filtroActivos } from "./activo";
 import type { Student } from "./types";
 
 // Excel final para certificados, con dos pestañas cruzables por ID (documento):
@@ -17,11 +18,12 @@ const porCiudadYNombre = (a: { ciudad: string; nombre: string }, b: { ciudad: st
 /**
  * soloValidados=false: la pestaña "Datos validados" incluye a todos con su dato más reciente (para revisar, no para certificar).
  * ciudad: si viene, ambas pestañas se limitan a esa ciudad.
+ * incluirInactivos: por defecto los inactivos NO salen en ninguna pestaña.
  */
-export async function datosCertificados(students: Collection<Student>, opciones: { soloValidados?: boolean; ciudad?: string } = {}): Promise<DatosCertificados> {
-  const { soloValidados = true, ciudad } = opciones;
+export async function datosCertificados(students: Collection<Student>, opciones: { soloValidados?: boolean; ciudad?: string; incluirInactivos?: boolean } = {}): Promise<DatosCertificados> {
+  const { soloValidados = true, ciudad, incluirInactivos = false } = opciones;
   const docs = await students
-    .find(ciudad ? { ciudad } : {}, {
+    .find({ ...(ciudad ? { ciudad } : {}), ...filtroActivos(incluirInactivos) }, {
       projection: { documento: 1, ciudad: 1, estado: 1, nombre: 1, correo: 1, nombreOriginal: 1, correoOriginal: 1, nombrePropuesto: 1, correoPropuesto: 1 },
     })
     .toArray();
@@ -70,10 +72,10 @@ export async function excelCertificados({ originales, validados }: DatosCertific
 
 export type FilaPendiente = { nombre: string; correo: string; documento: string; ciudad: string };
 
-/** Estudiantes en estado pendiente, opcionalmente de una sola ciudad. Solo lectura. */
-export async function filasPendientes(students: Collection<Student>, ciudad?: string): Promise<FilaPendiente[]> {
+/** Estudiantes en estado pendiente, opcionalmente de una sola ciudad. Sin inactivos salvo que se pidan. Solo lectura. */
+export async function filasPendientes(students: Collection<Student>, ciudad?: string, incluirInactivos = false): Promise<FilaPendiente[]> {
   const docs = await students
-    .find({ estado: "pendiente", ...(ciudad ? { ciudad } : {}) }, { projection: { nombre: 1, correo: 1, documento: 1, ciudad: 1 } })
+    .find({ estado: "pendiente", ...(ciudad ? { ciudad } : {}), ...filtroActivos(incluirInactivos) }, { projection: { nombre: 1, correo: 1, documento: 1, ciudad: 1 } })
     .toArray();
   return docs
     .map((s) => ({ nombre: s.nombre, correo: s.correo, documento: s.documento, ciudad: s.ciudad }))

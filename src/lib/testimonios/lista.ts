@@ -88,21 +88,31 @@ export type PlanLista = {
   errores: Problema[];
   avisos: Problema[];
   ciudades: Record<string, number>;
+  /** Documentos de los nuevos que ya están inactivos en students: se crean inactivos con el mismo motivo. */
+  quedanInactivos: { documento: string; motivo: string }[];
 };
 
+/** Estado inactivo que trae un documento desde students (solo se usa para participantes nuevos). */
+export type InactivoHeredado = { inactivoMotivo: string; inactivoEn: Date; inactivoPor: { usuario: string; nombre: string; rol: string } | null };
+
 /** Compara el archivo con la lista actual. No escribe nada. */
-export function planificarLista(rows: Record<string, string>[], actuales: Participante[]): PlanLista {
+export function planificarLista(rows: Record<string, string>[], actuales: Participante[], inactivos: ReadonlyMap<string, InactivoHeredado> = new Map()): PlanLista {
   const { filas, errores, avisos } = leerParticipantes(rows);
   const porDoc = new Map(actuales.map((p) => [p.documento, p]));
   const enArchivo = new Set(filas.map((f) => f.documento));
   const plan: PlanLista = {
     columnas: Object.keys(rows[0] ?? {}), filasLeidas: rows.length,
-    nuevos: [], cambiados: [], ausentes: [], sinCambios: 0, errores, avisos, ciudades: {},
+    nuevos: [], cambiados: [], ausentes: [], sinCambios: 0, errores, avisos, ciudades: {}, quedanInactivos: [],
   };
   for (const f of filas) {
     plan.ciudades[f.ciudad] = (plan.ciudades[f.ciudad] ?? 0) + 1;
     const p = porDoc.get(f.documento);
-    if (!p) { plan.nuevos.push(f); continue; }
+    if (!p) {
+      plan.nuevos.push(f);
+      const h = inactivos.get(f.documento);
+      if (h) plan.quedanInactivos.push({ documento: f.documento, motivo: h.inactivoMotivo });
+      continue;
+    }
     const cambios = CAMPOS
       .map((c) => ({ campo: c, antes: String(p[c] ?? ""), despues: String(f[c] ?? "") }))
       .filter((c) => c.antes !== c.despues);

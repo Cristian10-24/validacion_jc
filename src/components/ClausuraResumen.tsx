@@ -14,8 +14,8 @@ const colorAvance = (p: number) => (p >= 85 ? "var(--green)" : p >= 65 ? "var(--
 /** Etiqueta corta de una opción de asistencia a partir de su ID estable ("si" → Sí, "inconvenientes" → Inconvenientes). */
 export const etiquetaCorta = (id: string) => (id === "si" ? "Sí" : id === "no" ? "No" : id.charAt(0).toUpperCase() + id.slice(1).replace(/_/g, " "));
 
-export async function descargarExcel(evento: string, sinResponder: boolean): Promise<{ archivo: string; filas: number }> {
-  const res = await fetch(`/api/clausura/exportar?evento=${encodeURIComponent(evento)}${sinResponder ? "&sinResponder=1" : ""}`, { cache: "no-store" });
+export async function descargarExcel(evento: string, sinResponder: boolean, incluirInactivos = false): Promise<{ archivo: string; filas: number }> {
+  const res = await fetch(`/api/clausura/exportar?evento=${encodeURIComponent(evento)}${sinResponder ? "&sinResponder=1" : ""}${incluirInactivos ? "&inactivos=1" : ""}`, { cache: "no-store" });
   if (!res.ok) throw new Error();
   const archivo = /filename="([^"]+)"/.exec(res.headers.get("Content-Disposition") ?? "")?.[1] ?? "clausura.xlsx";
   const filas = Number(res.headers.get("X-Filas") ?? 0);
@@ -32,6 +32,7 @@ export default function ClausuraResumen({ user }: { user: SessionUser }) {
   const [data, setData] = useState<ResumenClausura | null>(null);
   const [error, setError] = useState(false);
   const [sinResponder, setSinResponder] = useState(true);
+  const [conInactivos, setConInactivos] = useState(false);
   const [dl, setDl] = useState<{ estado: "idle" | "loading" | "error" } | { estado: "done"; archivo: string; filas: number }>({ estado: "idle" });
 
   async function cargar(silencioso = false) {
@@ -53,7 +54,7 @@ export default function ClausuraResumen({ user }: { user: SessionUser }) {
 
   async function descargar() {
     setDl({ estado: "loading" });
-    try { setDl({ estado: "done", ...(await descargarExcel("todos", sinResponder)) }); } catch { setDl({ estado: "error" }); }
+    try { setDl({ estado: "done", ...(await descargarExcel("todos", sinResponder, conInactivos)) }); } catch { setDl({ estado: "error" }); }
   }
 
   const t = data?.total;
@@ -88,6 +89,9 @@ export default function ClausuraResumen({ user }: { user: SessionUser }) {
           <div className={s.finalText}>Una fila por estudiante y una columna por pregunta, de todos los eventos. Incluye la hoja &quot;Preguntas&quot;.</div>
           <label className={s.finalText} style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <input type="checkbox" checked={sinResponder} onChange={(e) => setSinResponder(e.target.checked)} /> Incluir a quienes no han respondido
+          </label>
+          <label className={s.finalText} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input type="checkbox" checked={conInactivos} onChange={(e) => setConInactivos(e.target.checked)} /> Incluir inactivos
           </label>
           <div style={{ flex: 1 }} />
           {dl.estado === "error" && <div className={s.errBox}>No pudimos generar el archivo. Intenta otra vez.</div>}

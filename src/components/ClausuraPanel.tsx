@@ -5,7 +5,10 @@ import type { SessionUser } from "@/lib/auth";
 import type { ComentarioVista, DatosPanel, EstadoClausura, FilaClausura } from "@/lib/clausura/panel";
 import { buscarEncuesta } from "@/lib/encuesta/orden";
 import { puede, ROL_TXT, type RolUsuario } from "@/lib/permisos";
+import { soloActivos, visiblesSegunFiltro } from "@/lib/activo";
 import AppShell from "./AppShell";
+import MenuFila from "./MenuFila";
+import { DialogoActivo, EtiquetaInactivo, FiltroInactivos, estilosInactivos as si, type Persona } from "./Inactivos";
 import m from "./MonitorPanel.module.css";
 import t from "./TestimoniosPanel.module.css";
 import c from "./ClausuraPanel.module.css";
@@ -64,13 +67,17 @@ export default function ClausuraPanel({ user, inicial }: { user: SessionUser; in
   const puedeReabrir = puede(user.rol, "clausura_gestionar");
   const puedeExportar = puede(user.rol, "clausura_exportar");
   const [exportando, setExportando] = useState(false);
+  const cambiarActivo = puede(user.rol, "estudiantes_activo");
+  const [mostrarInactivos, setMostrarInactivos] = useState(false);
+  const [menu, setMenu] = useState<string | null>(null);
+  const [dlgActivo, setDlgActivo] = useState<Persona | null>(null);
 
   /** Excel del evento elegido, con quienes no han respondido (monitor: solo sus ciudades, lo filtra el servidor). */
   async function exportar() {
     if (!datos?.evento) return;
     setExportando(true);
     try {
-      const r = await descargarExcel(datos.evento.id, true);
+      const r = await descargarExcel(datos.evento.id, true, mostrarInactivos);
       aviso(`Excel descargado ✓ (${r.filas} filas)`, true);
     } catch {
       aviso("No se pudo generar el Excel. Intenta otra vez.");
@@ -112,21 +119,24 @@ export default function ClausuraPanel({ user, inicial }: { user: SessionUser; in
   const filas = datos?.filas ?? null;
   const ciudades = useMemo(() => [...new Set((filas ?? []).map((f) => f.ciudad))].sort((a, b) => a.localeCompare(b, "es")), [filas]);
   const enCiudad = useMemo(() => (filas ?? []).filter((f) => !ciudad || f.ciudad === ciudad), [filas, ciudad]);
-  const buscadas = useMemo(() => buscarEncuesta(enCiudad, q), [enCiudad, q]);
+  // Los inactivos no cuentan en totales ni porcentajes; solo se ven con "Mostrar inactivos".
+  const activosCiudad = useMemo(() => soloActivos(enCiudad), [enCiudad]);
+  const nInactivos = enCiudad.length - activosCiudad.length;
+  const buscadas = useMemo(() => buscarEncuesta(visiblesSegunFiltro(enCiudad, mostrarInactivos), q), [enCiudad, q, mostrarInactivos]);
   const cnt = useMemo(() => {
     const e: Record<EstadoClausura, number> = { respondio: 0, en_progreso: 0, sin_responder: 0 };
     const a = new Map<string, number>();
-    for (const f of enCiudad) {
+    for (const f of activosCiudad) {
       e[f.estado]++;
       const k = f.asistencia?.id ?? "";
       a.set(k, (a.get(k) ?? 0) + 1);
     }
     return { e, a };
-  }, [enCiudad]);
+  }, [activosCiudad]);
   const visibles = useMemo(() => buscadas
     .filter((f) => (filtro === "all" || f.estado === filtro) && (!asis || (asis === "sin" ? !f.asistencia : f.asistencia?.id === asis)))
     .sort((a, b) => ORDEN[a.estado] - ORDEN[b.estado] || a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" })), [buscadas, filtro, asis]);
-  const total = enCiudad.length;
+  const total = activosCiudad.length;
   const pct = (n: number) => (total ? `${(n / total) * 100}%` : "0%");
   const abierta = filas?.find((f) => f.id === detalle) ?? null;
   const ev = datos?.evento ?? null;
@@ -200,12 +210,12 @@ export default function ClausuraPanel({ user, inicial }: { user: SessionUser; in
   const fila = (f: FilaClausura) => {
     const st = STY[f.estado];
     return (
-      <div key={f.id} className={t.row}>
+      <div key={f.id} className={`${t.row} ${f.inactivo ? si.filaInactiva : ""}`}>
         <div className={t.rowGrid}>
           <div className={t.who}>
             <i className={`${t.dot} ${t.mobileDot}`} style={{ background: st.dot }} />
             <div className={t.whoText}>
-              <div className={t.name}>{f.nombre}</div>
+              <div className={t.name}>{f.nombre} <EtiquetaInactivo info={f.inactivo} /></div>
               <div className={t.doc}>{f.documento} · {f.ciudad}{f.grupo ? ` · ${f.grupo}` : ""}</div>
             </div>
           </div>
@@ -225,6 +235,8 @@ export default function ClausuraPanel({ user, inicial }: { user: SessionUser; in
             <button type="button" className={`${t.act} ${f.comentarios.length ? t.actComentarios : t.actGhost}`} onClick={() => { setDetalle(f.id); setTexto(""); setErrorNota(""); setEdicion(null); setErrorEdicion(""); }}>
               Ver{f.comentarios.length ? ` · ${f.comentarios.length} coment.` : ""}
             </button>
+            <MenuFila abierto={menu === f.id} onToggle={() => setMenu(menu === f.id ? null : f.id)} onCerrar={() => setMenu(null)} nombre={f.nombre}
+              items={cambiarActivo ? [{ label: f.inactivo ? "Reactivar" : "Inactivar", on: () => setDlgActivo({ documento: f.documento, nombre: f.nombre, inactivo: f.inactivo }) }] : []} />
           </div>
         </div>
       </div>
@@ -293,6 +305,9 @@ export default function ClausuraPanel({ user, inicial }: { user: SessionUser; in
             <span className={m.searchIcon} aria-hidden />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nombre, documento, correo o celular" aria-label="Buscar" />
           </label>
+          {(nInactivos > 0 || mostrarInactivos) && (
+            <div style={{ margin: "10px 0 4px" }}><FiltroInactivos valor={mostrarInactivos} onCambio={setMostrarInactivos} cuantos={nInactivos} /></div>
+          )}
 
           <div className={t.tableHead}><span>Estudiante</span><span>Contacto</span><span>Estado</span><span>Asistencia</span><span /></div>
         </>
@@ -405,6 +420,11 @@ export default function ClausuraPanel({ user, inicial }: { user: SessionUser; in
             </div>
           </div>
         </div>
+      )}
+
+      {dlgActivo && (
+        <DialogoActivo persona={dlgActivo} onCerrar={() => setDlgActivo(null)}
+          onListo={(activo) => { const n = dlgActivo.nombre.split(" ")[0]; setDlgActivo(null); cargar(true); aviso(activo ? `${n} quedó activo ✓` : `${n} quedó inactivo`, true); }} />
       )}
 
       {toast && <div className={`${m.toast} ${toast.ok ? m.toastOk : ""}`} role="status">{toast.text}</div>}

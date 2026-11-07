@@ -1,12 +1,14 @@
 // Aplicación de la lista de participantes (escribe SOLO en colecciones testimonios_*) y re-cruce posterior.
 import { ObjectId, type AnyBulkWriteOperation } from "mongodb";
 import { testimonios, type Participante, type Respuesta } from "./db";
-import { leerParticipantes, planificarLista, type PlanLista } from "./lista";
+import { leerParticipantes, planificarLista, type InactivoHeredado, type PlanLista } from "./lista";
 import { operacionCruce, planRecruce } from "./recruce";
 
-export async function vistaPreviaLista(rows: Record<string, string>[]): Promise<PlanLista> {
+type Inactivos = ReadonlyMap<string, InactivoHeredado>;
+
+export async function vistaPreviaLista(rows: Record<string, string>[], inactivos: Inactivos = new Map()): Promise<PlanLista> {
   const { participantes } = await testimonios();
-  return planificarLista(rows, await participantes.find({}).toArray());
+  return planificarLista(rows, await participantes.find({}).toArray(), inactivos);
 }
 
 /** Vuelve a cruzar todas las respuestas con la lista actual. Devuelve cuántas cambiaron. */
@@ -21,24 +23,37 @@ export async function recruzarTodo(): Promise<number> {
   return cambios.length;
 }
 
-export type ResultadoLista = { insertados: number; actualizados: number; eliminados: number; recruzadas: number };
+export type ResultadoLista = { insertados: number; inactivos: number; actualizados: number; eliminados: number; recruzadas: number };
 
 /**
  * Aplica el archivo. Vuelve a calcular el plan en este momento y solo elimina a los ausentes
  * que sigan ausentes y estén marcados. Sus comentarios y respuestas se conservan (las respuestas
  * se vuelven a cruzar: si nadie más coincide, quedan en "Sin dueño").
  */
-export async function aplicarLista(rows: Record<string, string>[], eliminarIds: string[], por: string): Promise<ResultadoLista & { plan: PlanLista }> {
+export async function aplicarLista(rows: Record<string, string>[], eliminarIds: string[], por: string, inactivos: Inactivos = new Map()): Promise<ResultadoLista & { plan: PlanLista }> {
   const { participantes, auditoria } = await testimonios();
-  const plan = planificarLista(rows, await participantes.find({}).toArray());
+  const plan = planificarLista(rows, await participantes.find({}).toArray(), inactivos);
   const now = new Date();
 
   if (plan.nuevos.length) {
-    await participantes.insertMany(plan.nuevos.map((f): Participante => ({
-      _id: new ObjectId(), documento: f.documento, nombres: f.nombres, apellidos: f.apellidos, nombre: f.nombre,
-      celular: f.celular, celularClave: f.celularClave, correo: f.correo, ciudad: f.ciudad, ciudadOriginal: f.ciudadOriginal,
-      creadoEn: now, actualizadoEn: now,
-    })));
+    const docs = plan.nuevos.map((f): Participante => {
+      // Si el documento ya está inactivo en students, el participante nace inactivo con el mismo motivo, fecha y autor.
+      const h = inactivos.get(f.documento);
+      return {
+        _id: new ObjectId(), documento: f.documento, nombres: f.nombres, apellidos: f.apellidos, nombre: f.nombre,
+        celular: f.celular, celularClave: f.celularClave, correo: f.correo, ciudad: f.ciudad, ciudadOriginal: f.ciudadOriginal,
+        creadoEn: now, actualizadoEn: now,
+        ...(h ? { activo: false, inactivoMotivo: h.inactivoMotivo, inactivoEn: h.inactivoEn, ...(h.inactivoPor ? { inactivoPor: h.inactivoPor } : {}) } : {}),
+      };
+    });
+    await participantes.insertMany(docs);
+    const heredados = docs.filter((d) => d.activo === false);
+    if (heredados.length) {
+      await auditoria.insertMany(heredados.map((d) => ({
+        accion: "inactivar_participante", por, fecha: now,
+        detalle: { participanteId: d._id, documento: d.documento, motivo: d.inactivoMotivo, heredadoDeStudents: true },
+      })));
+    }
   }
 
   const { filas } = leerParticipantes(rows);
@@ -61,7 +76,7 @@ export async function aplicarLista(rows: Record<string, string>[], eliminarIds: 
   const recruzadas = await recruzarTodo();
   await auditoria.insertOne({
     accion: "subir_lista", por, fecha: now,
-    detalle: { filasLeidas: plan.filasLeidas, insertados: plan.nuevos.length, actualizados, eliminados, eliminadosIds: borrar.map(String), recruzadas, errores: plan.errores.length },
+    detalle: { filasLeidas: plan.filasLeidas, insertados: plan.nuevos.length, inactivosHeredados: plan.quedanInactivos.length, actualizados, eliminados, eliminadosIds: borrar.map(String), recruzadas, errores: plan.errores.length },
   });
-  return { plan, insertados: plan.nuevos.length, actualizados, eliminados, recruzadas };
+  return { plan, insertados: plan.nuevos.length, inactivos: plan.quedanInactivos.length, actualizados, eliminados, recruzadas };
 }

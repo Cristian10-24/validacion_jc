@@ -1,4 +1,5 @@
 import type { Collection } from "mongodb";
+import { infoInactivo } from "./activo";
 import type { Student } from "./types";
 import { checkEmail } from "./validation/email";
 import { nameWarnings } from "./validation/name";
@@ -19,6 +20,7 @@ export function monitorRow(s: Student, repetidos: Set<string>) {
     correoPropuesto: s.correoPropuesto ?? null,
     fecha: (s.estado === "validado" ? s.validadoEn : s.estado === "corregido" ? s.actualizadoEn : null)?.toISOString() ?? null,
     validadoPor: s.validadoPor?.rol ?? null,
+    inactivo: infoInactivo(s),
     avisos: {
       correoRepetido: !!check.email && repetidos.has(check.email),
       correoInstitucional: check.educational,

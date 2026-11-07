@@ -1,6 +1,7 @@
 // Panel de seguimiento de la clausura (monitores, coordinación y admin). Solo LEE.
 // La lista sale de students (con el alcance del usuario, en la consulta) y se cruza con clausura_respuestas.
 import { ObjectId, type Filter } from "mongodb";
+import { infoInactivo, type InfoInactivo } from "@/lib/activo";
 import { scopeFilter, type SessionUser } from "@/lib/auth";
 import { puede } from "@/lib/permisos";
 import { celularConIndicativo } from "@/lib/testimonios/celular";
@@ -40,6 +41,8 @@ export type FilaClausura = {
   proyecto: { presenta: boolean; nombre: string } | null;
   secciones: SeccionLegible[];
   comentarios: ComentarioVista[];
+  /** null si está activo. Los inactivos vienen en la lista (filtro "Mostrar inactivos") pero no cuentan. */
+  inactivo: InfoInactivo;
 };
 
 export type EventoPanel = { id: string; slug: string; titulo: string; nombreVisible: string; estado: Evento["estado"]; ciudades: string[]; proyecto: "obligatorio" | "opcional" | "no" };
@@ -101,8 +104,8 @@ export async function datosPanel(user: Pick<SessionUser, "rol" | "ciudades">, ev
   if (!evento) return { eventos: lista, evento: null, asistencia: null, filas: [] };
 
   const alumnos = (await estudiantes.find(alcanceEvento(evento, user), {
-    projection: { documento: 1, nombre: 1, nombrePropuesto: 1, ciudad: 1, grupo: 1, correo: 1, correoPropuesto: 1 },
-  }).toArray()) as Pick<Student, "_id" | "documento" | "nombre" | "nombrePropuesto" | "ciudad" | "grupo" | "correo" | "correoPropuesto">[];
+    projection: { documento: 1, nombre: 1, nombrePropuesto: 1, ciudad: 1, grupo: 1, correo: 1, correoPropuesto: 1, activo: 1, inactivoMotivo: 1, inactivoEn: 1, inactivoPor: 1 },
+  }).toArray()) as Pick<Student, "_id" | "documento" | "nombre" | "nombrePropuesto" | "ciudad" | "grupo" | "correo" | "correoPropuesto" | "activo" | "inactivoMotivo" | "inactivoEn" | "inactivoPor">[];
   const ids = alumnos.map((a) => a._id);
   const [resp, notas] = await Promise.all([
     respuestas.find({ eventoId: evento._id, studentId: { $in: ids } }).toArray(),
@@ -143,6 +146,7 @@ export async function datosPanel(user: Pick<SessionUser, "rol" | "ciudades">, ev
       proyecto: proyectoDe(evento, f, r),
       secciones: r ? respuestasLegibles(f, r.respuestas) : [],
       comentarios: notasDe.get(k) ?? [],
+      inactivo: infoInactivo(a),
     };
   });
   return { eventos: lista, evento: lista.find((e) => e.id === evento._id.toHexString())!, asistencia, filas };

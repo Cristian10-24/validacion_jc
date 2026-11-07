@@ -1,5 +1,6 @@
 // Lectura de la vista "Encuesta final" según el usuario. Solo LEE (encuesta_* y testimonios_participantes).
 // El alcance por ciudad es el mismo de testimonios: un monitor solo ve participantes de sus ciudades.
+import { infoInactivo, type InfoInactivo } from "@/lib/activo";
 import type { SessionUser } from "@/lib/auth";
 import { alcanceTestimonios } from "@/lib/testimonios/vista";
 import { ultimaActividad } from "@/lib/testimonios/estado";
@@ -24,6 +25,8 @@ export type FilaEncuesta = {
   ultimaRespuesta: number | null;
   ultimoComentario: number | null;
   ultimoComentarioEditado: boolean;
+  /** null si está activo. Los inactivos vienen en la lista (filtro "Mostrar inactivos") pero no cuentan. */
+  inactivo: InfoInactivo;
 };
 
 type RespLeida = Pick<RespuestaEncuesta, "marcaTemporal" | "recibidaEn" | "norm" | "original" | "fila"> & { id: string };
@@ -43,7 +46,7 @@ async function cruceCompleto() {
 export async function filasEncuesta(user: Pick<SessionUser, "rol" | "ciudades">): Promise<FilaEncuesta[]> {
   const { participantes, comentarios } = await encuesta();
   const lista = (await participantes.find(alcanceTestimonios(user), {
-    projection: { documento: 1, nombre: 1, correo: 1, celular: 1, ciudad: 1, ciudadOriginal: 1 },
+    projection: { documento: 1, nombre: 1, correo: 1, celular: 1, ciudad: 1, ciudadOriginal: 1, activo: 1, inactivoMotivo: 1, inactivoEn: 1, inactivoPor: 1 },
   }).toArray()) as ParticipanteLectura[];
   const ids = lista.map((p) => p._id);
   const [{ porParticipante }, notas] = await Promise.all([
@@ -72,6 +75,7 @@ export async function filasEncuesta(user: Pick<SessionUser, "rol" | "ciudades">)
       ultimaRespuesta: ms,
       ultimoComentario: ua?.ms ?? null,
       ultimoComentarioEditado: ua?.editado ?? false,
+      inactivo: infoInactivo(p),
     };
   });
 }
