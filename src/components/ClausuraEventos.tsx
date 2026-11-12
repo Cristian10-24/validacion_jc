@@ -13,7 +13,7 @@ import c from "./ClausuraEventos.module.css";
 type Fila = {
   id: string; slug: string; tipo: "expoferia" | "clausura"; nombreTipo: string; titulo: string; nombreVisible: string; ciudades: string[];
   dia: string; hora: string; llegada: string | null; lugar: string; direccion: string; mapa: string; imagen: string | null; fechaLimite: string | null;
-  estado: "borrador" | "abierto" | "cerrado"; permitirEdicion: boolean; proyecto: "obligatorio" | "opcional" | "no"; enviadas: number;
+  estado: "borrador" | "abierto" | "cerrado"; permitirEdicion: boolean; proyecto: "obligatorio" | "opcional" | "no"; acompanante: "si" | "no"; enviadas: number;
   datos?: DatosEvento;
 };
 type Datos = { eventos: Fila[]; ciudades: string[]; puedeGestionar: boolean };
@@ -21,6 +21,7 @@ type Form = DatosEvento & { copiarDe: string };
 
 const ESTADOS = { borrador: ["Borrador", "var(--surface-2)", "var(--muted)"], abierto: ["Abierto", "var(--green-soft)", "var(--green-dark)"], cerrado: ["Cerrado", "var(--red-soft)", "var(--red-dark)"] } as const;
 const PROYECTO = { obligatorio: "Obligatorio (todos presentan)", opcional: "Opcional (se pregunta si presenta)", no: "No hay proyecto" } as const;
+const ACOMPANANTE = { si: "Sí, pueden llevar uno", no: "No llevan acompañante" } as const;
 const ZONAS = { "America/Bogota": "Colombia (UTC-5)", "America/Panama": "Panamá (UTC-5)", "America/Guayaquil": "Ecuador (UTC-5)", "America/Montevideo": "Uruguay (UTC-3)" };
 const TIPOS = { expoferia: { nombre: "EXPOFeria y clausura", kicker: "EXPOFERIA" }, clausura: { nombre: "Clausura", kicker: "CLAUSURA" } } as const;
 
@@ -31,7 +32,7 @@ function nuevo(): Form {
   return {
     slug: "", tipo: "clausura", titulo: `Clausura ${anio}`, kicker: `CLAUSURA ${anio}`, nombreVisible: "", ciudades: [], descripcion: "",
     lugar: "", direccion: "", mapaUrl: null, zonaHoraria: "America/Bogota", inicio: "", fin: null, citacion: null, fechaLimite: null, imagen: null,
-    permitirEdicion: false, proyecto: "no", copiarDe: "plantilla",
+    permitirEdicion: false, proyecto: "no", acompanante: "si", copiarDe: "plantilla",
   };
 }
 
@@ -187,6 +188,7 @@ export default function ClausuraEventos({ user }: { user: SessionUser }) {
                   <dt>Fecha límite</dt><dd>{e.fechaLimite ?? "Sin fecha límite"}</dd>
                   <dt>Editar después de enviar</dt><dd>{e.permitirEdicion ? "Sí, permitido" : "No (solo si administración reabre)"}</dd>
                   <dt>Proyecto</dt><dd>{PROYECTO[e.proyecto]}</dd>
+                  <dt>Acompañante</dt><dd>{ACOMPANANTE[e.acompanante]}</dd>
                   <dt>Respuestas enviadas</dt><dd>{e.enviadas}</dd>
                   <dt>Enlace</dt><dd><a href={`/clausura/${e.slug}`} target="_blank" rel="noreferrer">/clausura/{e.slug}</a></dd>
                 </dl>
@@ -229,6 +231,12 @@ export default function ClausuraEventos({ user }: { user: SessionUser }) {
                 <select className="input" value={form.f.proyecto} onChange={(e) => set("proyecto", e.target.value as Form["proyecto"])}>
                   {Object.entries(PROYECTO).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
+              </label>
+              <label className={c.campo}>Acompañante
+                <select className="input" value={form.f.acompanante} onChange={(e) => set("acompanante", e.target.value as Form["acompanante"])}>
+                  {Object.entries(ACOMPANANTE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+                {form.f.acompanante === "no" && <span className={c.ayuda}>No aparece la sección de acompañante en el formulario. Las preguntas frecuentes lo dicen.</span>}
               </label>
               <label className={c.campo}>Título<input className="input" value={form.f.titulo} maxLength={120} onChange={(e) => set("titulo", e.target.value)} /></label>
               <label className={c.campo}>Texto pequeño (kicker)<input className="input" value={form.f.kicker} maxLength={40} onChange={(e) => set("kicker", e.target.value)} /></label>

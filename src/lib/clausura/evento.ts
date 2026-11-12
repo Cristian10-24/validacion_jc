@@ -5,6 +5,7 @@ import type { Evento, EstadoEvento } from "./db";
 import { enlaceGoogle } from "./calendario";
 import { Formulario, ID, type Respuestas } from "./formulario/esquema";
 import { preguntasDe } from "./formulario/motor";
+import { aplicarAcompanante, MODOS_ACOMPANANTE, type ModoAcompanante } from "./formulario/acompanante";
 import { aplicarProyecto, MODOS_PROYECTO, type ModoProyecto } from "./formulario/proyecto";
 import { reemplazar, resolverTextos, type Variables } from "./formulario/variables";
 import { sinMarcadores, textoQuedan } from "./presentacion";
@@ -70,6 +71,8 @@ export const EventoArchivo = z.object({
   opcionesAsisten: z.array(ID).max(20).default([]),
   /** Sección del proyecto: "obligatorio" (aparece y se exige), "opcional" (pregunta Sí/No antes) o "no". */
   proyecto: z.enum(MODOS_PROYECTO).default("no"),
+  /** ¿Pueden llevar acompañante? "si" (la sección de acompañante aparece) o "no" (no aparece). Sin el campo: "si". */
+  acompanante: z.enum(MODOS_ACOMPANANTE).default("si"),
   formulario: Formulario,
 }).strict();
 export type EventoArchivo = z.infer<typeof EventoArchivo>;
@@ -141,7 +144,7 @@ export function datosDesdeArchivo(e: EventoArchivo) {
     descripcion: e.descripcion, lugar: e.lugar, direccion: e.direccion, mapaUrl: e.mapaUrl ?? null,
     inicio: fecha(e.inicio, "inicio")!, fin: fecha(e.fin, "fin"), citacion: fecha(e.citacion, "citacion"), zonaHoraria: e.zonaHoraria, zonaHorariaTexto: e.zonaHorariaTexto ?? null,
     imagen: e.imagen ?? null, estado: e.estado as EstadoEvento, fechaLimite: fecha(e.fechaLimite, "fechaLimite"),
-    permitirEdicion: e.permitirEdicion, preguntaAsistencia: e.preguntaAsistencia ?? null, opcionesAsisten: e.opcionesAsisten, proyecto: e.proyecto, formulario: e.formulario,
+    permitirEdicion: e.permitirEdicion, preguntaAsistencia: e.preguntaAsistencia ?? null, opcionesAsisten: e.opcionesAsisten, proyecto: e.proyecto, acompanante: e.acompanante, formulario: e.formulario,
   };
 }
 
@@ -198,8 +201,15 @@ export function variablesDe(e: Pick<Evento, "tipo" | "inicio" | "zonaHoraria" | 
 /** Modo del proyecto (los eventos sin el campo cuentan como "no"). */
 export const modoProyecto = (e: Pick<Evento, "proyecto">): ModoProyecto => e.proyecto ?? "no";
 
-/** Formulario que se responde de verdad: el guardado + la regla del proyecto del evento. El servidor valida con este. */
-export const formularioActivo = (e: Pick<Evento, "proyecto">, f: Formulario) => aplicarProyecto(f, modoProyecto(e));
+/** ¿Pueden llevar acompañante? (los eventos sin el campo cuentan como "si", como antes). */
+export const modoAcompanante = (e: Pick<Evento, "acompanante">): ModoAcompanante => e.acompanante ?? "si";
+
+/**
+ * Formulario que se responde de verdad: el guardado + la regla del proyecto y la del acompañante del evento.
+ * El servidor valida con este.
+ */
+export const formularioActivo = (e: Pick<Evento, "proyecto" | "acompanante">, f: Formulario) =>
+  aplicarAcompanante(aplicarProyecto(f, modoProyecto(e)), modoAcompanante(e));
 
 /** Formulario con los textos ya resueltos para este evento. */
 export const formularioDe = (e: Pick<Evento, "tipo" | "inicio" | "zonaHoraria" | "lugar" | "citacion">, f: Formulario) => resolverTextos(f, variablesDe(e));
@@ -223,6 +233,7 @@ export function eventoVista(e: Evento, ahora = new Date()) {
     preguntaAsistencia: e.preguntaAsistencia, opcionesAsisten: e.opcionesAsisten ?? [],
     calendario: { ics: `/api/clausura/calendario/${e.slug}`, google: enlaceGoogle(e) },
     proyecto: modoProyecto(e),
+    acompanante: modoAcompanante(e),
     portada: presentacionDe(e, ahora),
     formulario: formularioDe(e, formularioActivo(e, e.formulario)),
   };

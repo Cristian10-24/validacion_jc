@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { exigir, sameOrigin } from "@/lib/auth";
 import { clausura } from "@/lib/clausura/db";
-import { mapaDe, modoProyecto, TIPOS_EVENTO, textoFecha, tipoDe } from "@/lib/clausura/evento";
+import { mapaDe, modoAcompanante, modoProyecto, TIPOS_EVENTO, textoFecha, tipoDe } from "@/lib/clausura/evento";
 import { crearEvento, datosParaEditar, NuevoEvento } from "@/lib/clausura/gestion";
 import { eventosVisibles } from "@/lib/clausura/panel";
 import { leerCuerpo } from "@/lib/clausura/rutas";
@@ -28,7 +28,7 @@ export async function GET() {
       id: e._id.toHexString(), slug: e.slug, tipo, nombreTipo: TIPOS_EVENTO[tipo].nombre, titulo: e.titulo, nombreVisible: e.nombreVisible,
       ciudades: e.ciudades, dia: f.dia, hora: f.hora, llegada: f.llegada, lugar: e.lugar, direccion: e.direccion, mapa: mapaDe(e), imagen: e.imagen,
       fechaLimite: e.fechaLimite ? espacios(e.fechaLimite.toLocaleString("es-CO", { day: "numeric", month: "long", hour: "numeric", minute: "2-digit", timeZone: e.zonaHoraria })) : null,
-      estado: e.estado, permitirEdicion: e.permitirEdicion, proyecto: modoProyecto(e),
+      estado: e.estado, permitirEdicion: e.permitirEdicion, proyecto: modoProyecto(e), acompanante: modoAcompanante(e),
       enviadas: enviadas.get(e._id.toHexString()) ?? 0,
       ...(admin ? { datos: datosParaEditar(e) } : {}),
     };

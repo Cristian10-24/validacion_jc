@@ -1,6 +1,6 @@
 import ClausuraFlujo from "@/components/ClausuraFlujo";
 import { clausura } from "@/lib/clausura/db";
-import { eventoVista, formularioActivo } from "@/lib/clausura/evento";
+import { eventoVista, formularioActivo, modoAcompanante } from "@/lib/clausura/evento";
 import { preguntasFrecuentes } from "@/lib/clausura/presentacion";
 
 export const metadata = { title: "Clausura 2026 · Confirmación de asistencia · Jóvenes creaTIvos" };
@@ -18,6 +18,8 @@ export default async function ClausuraInicio() {
     const { formulario: _f, ...v } = eventoVista(e, ahora);
     return v;
   });
-  const faq = preguntasFrecuentes(abiertos.map((e) => ({ formulario: formularioActivo(e, e.formulario), permitirEdicion: e.permitirEdicion })));
+  const faq = preguntasFrecuentes(abiertos.map((e) => ({
+    formulario: formularioActivo(e, e.formulario), permitirEdicion: e.permitirEdicion, acompanante: modoAcompanante(e),
+  })));
   return <ClausuraFlujo evento={null} eventos={lista} faq={faq} privacyUrl={process.env.NEXT_PUBLIC_PRIVACY_URL || "https://tocaunavida.org"} />;
 }

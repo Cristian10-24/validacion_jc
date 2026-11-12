@@ -1,5 +1,6 @@
 // Presentación de la portada pública de la clausura (solo textos derivados de los datos; sin acceso a la base).
 // Funciones puras: las usan el servidor (páginas) y el navegador (estados), y tienen pruebas.
+import { esSeccionAcompanante } from "./formulario/acompanante";
 import type { Formulario } from "./formulario/esquema";
 
 /** Un texto con marcadores tipo "[HORA]", "[POR DEFINIR]" o "[...]" no se muestra: devuelve null y la línea se oculta. */
@@ -30,22 +31,33 @@ export function textoQuedan(limite: Date | null | undefined, tz: string, ahora =
 
 /** ¿El formulario tiene la sección de acompañante? (por su ID o su título) */
 export function tieneAcompanante(f: Formulario): boolean {
-  return f.secciones.some((s) => !s.archivada && (/acompa/i.test(s.id) || /acompañante/i.test(s.titulo)));
+  return f.secciones.some((s) => !s.archivada && esSeccionAcompanante(s));
 }
 
 export type PreguntaFrecuente = { pregunta: string; respuesta: string };
 
+/** Respuesta de "¿Puedo llevar un acompañante?" según los eventos (null = no se muestra la pregunta). */
+export function respuestaAcompanante(eventos: { formulario: Formulario; acompanante?: "si" | "no" }[]): string | null {
+  const con = eventos.filter((e) => e.acompanante !== "no" && tieneAcompanante(e.formulario));
+  const sin = eventos.filter((e) => e.acompanante === "no");
+  const SI = "Puedes llevar solo un acompañante. Lo indicas en el formulario.";
+  if (!sin.length) return con.length ? SI : null;
+  if (!con.length) return "No. Para la clausura no se permiten acompañantes.";
+  // Sin nombrar ciudades: todavía no se sabe en cuáles se podrá.
+  return "Depende de tu ciudad. En las ciudades donde se permite, puedes llevar solo un acompañante y lo indicas en el formulario.";
+}
+
 /**
  * Preguntas frecuentes según la configuración de los eventos que se muestran (no fijas):
- *  - acompañante: solo si algún formulario tiene la sección de acompañante;
+ *  - acompañante: según el campo "acompanante" de cada evento (y si su formulario tiene la sección);
+ *    si unas ciudades pueden y otras no, dice que depende de la ciudad (sin nombrarlas);
  *  - no puedo asistir: siempre (que igual responda y cuente la razón);
  *  - cambiar la respuesta: según permitirEdicion (si los eventos no coinciden, no se muestra).
  */
-export function preguntasFrecuentes(eventos: { formulario: Formulario; permitirEdicion: boolean }[]): PreguntaFrecuente[] {
+export function preguntasFrecuentes(eventos: { formulario: Formulario; permitirEdicion: boolean; acompanante?: "si" | "no" }[]): PreguntaFrecuente[] {
   const lista: PreguntaFrecuente[] = [];
-  if (eventos.some((e) => tieneAcompanante(e.formulario))) {
-    lista.push({ pregunta: "¿Puedo llevar un acompañante?", respuesta: "Puedes llevar solo un acompañante. Lo indicas en el formulario." });
-  }
+  const acompanante = respuestaAcompanante(eventos);
+  if (acompanante) lista.push({ pregunta: "¿Puedo llevar un acompañante?", respuesta: acompanante });
   lista.push({
     pregunta: "¿Qué pasa si no puedo asistir?",
     respuesta: "Entra igual con tu documento y cuéntanos en el formulario que no podrás ir y por qué. Así organizamos mejor el evento.",

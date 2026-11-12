@@ -8,6 +8,7 @@ import { clausura, type Evento } from "./db";
 import { datosDesdeArchivo, EventoArchivo, mismaCiudad, pendientesDe, POR_DEFINIR, revisarEventoArchivo, TIPOS_EVENTO } from "./evento";
 import { Formulario } from "./formulario/esquema";
 import { validarFormulario } from "./formulario/motor";
+import { MODOS_ACOMPANANTE } from "./formulario/acompanante";
 import { MODOS_PROYECTO } from "./formulario/proyecto";
 
 // ---------- Fechas: el admin escribe la hora local del evento; se guarda con su zona ----------
@@ -53,6 +54,8 @@ export const DatosEvento = z.object({
   imagen: z.string().max(200).nullable(),
   permitirEdicion: z.boolean(),
   proyecto: z.enum(MODOS_PROYECTO),
+  /** ¿Pueden llevar acompañante? Si no llega, "si" (como antes). */
+  acompanante: z.enum(MODOS_ACOMPANANTE).default("si"),
 }).strict();
 export type DatosEvento = z.infer<typeof DatosEvento>;
 
@@ -77,7 +80,7 @@ function validar(d: DatosEvento, base: { formulario: Formulario; preguntaAsisten
     inicio: localAIso(d.inicio, d.zonaHoraria), fin: d.fin ? localAIso(d.fin, d.zonaHoraria) : null,
     citacion: d.citacion ? localAIso(d.citacion, d.zonaHoraria) : null,
     fechaLimite: d.fechaLimite ? localAIso(d.fechaLimite, d.zonaHoraria) : null,
-    imagen: d.imagen || null, estado: base.estado, permitirEdicion: d.permitirEdicion, proyecto: d.proyecto,
+    imagen: d.imagen || null, estado: base.estado, permitirEdicion: d.permitirEdicion, proyecto: d.proyecto, acompanante: d.acompanante,
     preguntaAsistencia: base.preguntaAsistencia, opcionesAsisten: base.opcionesAsisten, formulario: base.formulario,
   };
   const r = EventoArchivo.safeParse(archivo);
@@ -160,6 +163,6 @@ export function datosParaEditar(e: Evento): DatosEvento {
     inicio: isoALocal(e.inicio, e.zonaHoraria), fin: e.fin ? isoALocal(e.fin, e.zonaHoraria) : null,
     citacion: e.citacion ? isoALocal(e.citacion, e.zonaHoraria) : null,
     fechaLimite: e.fechaLimite ? isoALocal(e.fechaLimite, e.zonaHoraria) : null,
-    imagen: e.imagen, permitirEdicion: e.permitirEdicion, proyecto: e.proyecto ?? "no",
+    imagen: e.imagen, permitirEdicion: e.permitirEdicion, proyecto: e.proyecto ?? "no", acompanante: e.acompanante ?? "si",
   };
 }

@@ -62,6 +62,8 @@ export type Evento = {
   preguntaAsistencia: string | null;
   /** Sección del proyecto: "obligatorio" (aparece y se exige), "opcional" (pregunta antes) o "no". Sin el campo: "no". */
   proyecto?: "obligatorio" | "opcional" | "no";
+  /** ¿Pueden llevar acompañante? "no" quita la sección de acompañante del formulario. Sin el campo: "si". */
+  acompanante?: "si" | "no";
   /** Opciones de la pregunta de asistencia que cuentan como "asistirá" (calendario y contadores). */
   opcionesAsisten?: string[];
   formulario: Formulario;
